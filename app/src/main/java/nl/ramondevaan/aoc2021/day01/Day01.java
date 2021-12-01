@@ -19,7 +19,7 @@ public class Day01 {
     }
 
     private long countIncreases(int window) {
-        int count = 0;
+        long count = 0;
 
         for (int out = 0, in = window; in < depths.length; out++, in++) {
             if (depths[in] > depths[out]) {
