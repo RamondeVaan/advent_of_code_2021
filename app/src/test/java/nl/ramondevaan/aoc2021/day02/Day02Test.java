@@ -25,12 +25,12 @@ class Day02Test {
 
     @Test
     void puzzle1() {
-        assertEquals(0L, day02.solve1());
+        assertEquals(1604850L, day02.solve1());
     }
 
     @Test
     void puzzle2() {
-        assertEquals(0L, day02.solve2());
+        assertEquals(1685186100L, day02.solve2());
     }
 
 }
