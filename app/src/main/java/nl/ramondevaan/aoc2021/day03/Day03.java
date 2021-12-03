@@ -24,7 +24,7 @@ public class Day03 {
             }
         }
 
-        int epsilon = gamma ^ ((~0) >>> (32-ones.length));
+        int epsilon = gamma ^ ((~0) >>> (32 - ones.length));
         return (long) gamma * epsilon;
     }
 
