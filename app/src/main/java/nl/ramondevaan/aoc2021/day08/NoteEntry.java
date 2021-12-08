@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public record NoteEntry(List<Digit> digits, List<Digit> display) {
+    public Stream<Digit> digitStream() {
+        return digits.stream();
+    }
+
     public Stream<Digit> displayStream() {
         return display.stream();
     }

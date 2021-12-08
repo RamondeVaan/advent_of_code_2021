@@ -1,6 +1,5 @@
 package nl.ramondevaan.aoc2021.day08;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,37 +43,30 @@ public class Day08 {
     }
 
     public long solve2() {
-        Map<Integer, Integer> intersectionCountToNumberMap = this.numberToSegmentMap.entrySet().stream()
+        Map<Character, Long> segmentOccurrences = numberToSegmentMap.values().stream().flatMap(Set::stream)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        Map<Integer, Integer> idToNumberMap = this.numberToSegmentMap.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(
-                        entry -> this.numberToSegmentMap.values().stream()
-                                .mapToInt(set -> intersectionSize(entry.getValue(), set))
-                                .sum(),
+                        entry -> generateId(segmentOccurrences, entry.getValue()),
                         Map.Entry::getKey
                 ));
-        if (intersectionCountToNumberMap.values().stream().distinct().count() != intersectionCountToNumberMap.size()) {
+        if (idToNumberMap.size() != numberToSegmentMap.size()) {
             throw new UnsupportedOperationException();
         }
         return noteEntries.stream()
-                .mapToLong(noteEntry -> solveNoteEntry(intersectionCountToNumberMap, noteEntry))
+                .mapToLong(noteEntry -> solveNoteEntry(idToNumberMap, noteEntry))
                 .sum();
     }
 
-    private static long solveNoteEntry(Map<Integer, Integer> intersectionCountToNumberMap, NoteEntry noteEntry) {
-        Map<Digit, Integer> digitToNumberMap = noteEntry.digits().stream().collect(Collectors.toUnmodifiableMap(
-                Function.identity(),
-                digit -> intersectionCountToNumberMap.get(
-                        noteEntry.digits().stream()
-                                .mapToInt(otherDigit -> intersectionSize(digit.wires(), otherDigit.wires()))
-                                .sum()
-                )
-        ));
-        return noteEntry.displayStream().mapToLong(digitToNumberMap::get)
+    private static long solveNoteEntry(Map<Integer, Integer> numberIdentifiers, NoteEntry noteEntry) {
+        Map<Character, Long> segmentOccurrences = noteEntry.digitStream().flatMap(Digit::wireStream)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        return noteEntry.displayStream()
+                .mapToLong(digit -> numberIdentifiers.get(generateId(segmentOccurrences, digit.wires())))
                 .reduce(0L, (left, right) -> left * 10 + right);
     }
 
-    public static <T> int intersectionSize(Set<T> a, Set<T> b) {
-        Set<T> ret = new HashSet<>(a);
-        ret.retainAll(b);
-        return ret.size();
+    private static int generateId(Map<Character, Long> segmentOccurrences, Set<Character> set) {
+        return set.stream().map(segmentOccurrences::get).sorted().toList().hashCode();
     }
 }
