@@ -46,11 +46,8 @@ public class Day08 {
     public long solve2() {
         Map<Integer, Integer> intersectionCountToNumberMap = this.numberToSegmentMap.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(
-                        entry -> this.numberToSegmentMap.values().stream().mapToInt(set -> {
-                                    Set<Character> intersection = new HashSet<>(set);
-                                    intersection.retainAll(entry.getValue());
-                                    return intersection.size();
-                                })
+                        entry -> this.numberToSegmentMap.values().stream()
+                                .mapToInt(set -> intersectionSize(entry.getValue(), set))
                                 .sum(),
                         Map.Entry::getKey
                 ));
