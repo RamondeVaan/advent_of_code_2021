@@ -58,9 +58,8 @@ public class Day09 {
                 }
             }
 
-            toCheck.clear();
-            toCheck.addAll(temp);
-            temp.clear();
+            toCheck = temp;
+            temp = new HashSet<>();
         }
 
         return basin;
