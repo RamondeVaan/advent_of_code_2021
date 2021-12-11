@@ -5,16 +5,16 @@ public class AimCommandHandler implements CommandHandler {
     public Position handle(Position position, Command command) {
         if (command instanceof ForwardCommand forward) {
             return new Position(
-                    position.getHorizontal() + forward.getAmount(),
-                    position.getDepth() + position.getAim() * forward.getAmount(),
+                    position.getHorizontal() + forward.amount(),
+                    position.getDepth() + position.getAim() * forward.amount(),
                     position.getAim()
             );
         }
         if (command instanceof UpCommand up) {
-            return position.withAim(position.getAim() - up.getAmount());
+            return position.withAim(position.getAim() - up.amount());
         }
         if (command instanceof DownCommand down) {
-            return position.withAim(position.getAim() + down.getAmount());
+            return position.withAim(position.getAim() + down.amount());
         }
 
         throw new UnsupportedOperationException();
