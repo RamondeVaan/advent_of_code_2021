@@ -18,8 +18,8 @@ public class Day05 {
 
     public long solve1() {
         Stream<LineSegment> lineSegmentStream = lineSegments.stream()
-                .filter(lineSegment -> lineSegment.start.x == lineSegment.end.x ||
-                        lineSegment.start.y == lineSegment.end.y);
+                .filter(lineSegment -> lineSegment.start().x() == lineSegment.end().x() ||
+                        lineSegment.start().y() == lineSegment.end().y());
         return countPointsOfOverlap(lineSegmentStream);
     }
 

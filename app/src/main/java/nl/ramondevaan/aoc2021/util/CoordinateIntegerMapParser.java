@@ -1,13 +1,11 @@
-package nl.ramondevaan.aoc2021.day11;
-
-import nl.ramondevaan.aoc2021.util.Parser;
+package nl.ramondevaan.aoc2021.util;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OctopusGridParser implements Parser<List<String>, Map<Coordinate, Integer>> {
+public class CoordinateIntegerMapParser implements Parser<List<String>, Map<Coordinate, Integer>> {
     @Override
     public Map<Coordinate, Integer> parse(List<String> toParse) {
         Map<Coordinate, Integer> grid = new HashMap<>();

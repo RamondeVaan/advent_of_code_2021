@@ -1,15 +1,20 @@
 package nl.ramondevaan.aoc2021.day11;
 
+import nl.ramondevaan.aoc2021.util.Coordinate;
+import nl.ramondevaan.aoc2021.util.CoordinateIntegerMapParser;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 public class Day11 {
 
     private final Map<Coordinate, Integer> octopusGrid;
 
     public Day11(List<String> lines) {
-        OctopusGridParser parser = new OctopusGridParser();
+        CoordinateIntegerMapParser parser = new CoordinateIntegerMapParser();
         this.octopusGrid = parser.parse(lines);
     }
 
@@ -48,9 +53,9 @@ public class Day11 {
             flashed.addAll(toFlash);
             toFlash = toFlash.stream()
                     .peek(coordinate -> next.put(coordinate, 0))
-                    .flatMap(Coordinate::neighbors)
+                    .flatMap(Coordinate::allNeighbors)
                     .filter(next::containsKey)
-                    .filter(coordinate -> !flashed.contains(coordinate))
+                    .filter(not(flashed::contains))
                     .peek(increment)
                     .filter(coordinate -> next.get(coordinate) >= 10)
                     .collect(Collectors.toUnmodifiableSet());

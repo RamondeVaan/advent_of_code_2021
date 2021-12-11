@@ -1,11 +1,13 @@
 package nl.ramondevaan.aoc2021.day04;
 
+import nl.ramondevaan.aoc2021.util.Coordinate;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Board {
-    private final Map<Integer, Position> numberPositionMap;
+    private final Map<Integer, Coordinate> numberPositionMap;
     private final int rows;
     private final int columns;
 
@@ -17,7 +19,7 @@ public class Board {
         int count = 0;
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < this.columns; column++) {
-                this.numberPositionMap.put(values[count++], Position.of(row, column));
+                this.numberPositionMap.put(values[count++], new Coordinate(row, column));
             }
         }
     }
@@ -30,7 +32,7 @@ public class Board {
         return columns;
     }
 
-    public Map<Integer, Position> getNumberPositionMap() {
+    public Map<Integer, Coordinate> getNumberPositionMap() {
         return Collections.unmodifiableMap(numberPositionMap);
     }
 }

@@ -19,8 +19,8 @@ public class LineSegmentParser implements Parser<String, LineSegment> {
         }
 
         return new LineSegment(
-                Position.of(Integer.parseInt(matcher.group("x1")), Integer.parseInt(matcher.group("y1"))),
-                Position.of(Integer.parseInt(matcher.group("x2")), Integer.parseInt(matcher.group("y2")))
+                new Position(Integer.parseInt(matcher.group("x1")), Integer.parseInt(matcher.group("y1"))),
+                new Position(Integer.parseInt(matcher.group("x2")), Integer.parseInt(matcher.group("y2")))
         );
     }
 }

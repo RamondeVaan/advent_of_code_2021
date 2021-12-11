@@ -1,5 +1,7 @@
 package nl.ramondevaan.aoc2021.day04;
 
+import nl.ramondevaan.aoc2021.util.Coordinate;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -8,7 +10,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class MutableBoard {
-    private final Map<Integer, Position> numberPositionMap;
+    private final Map<Integer, Coordinate> numberPositionMap;
     private final AtomicInteger[] rowCounters;
     private final AtomicInteger[] columnCounters;
     private boolean bingo;
@@ -27,10 +29,10 @@ public class MutableBoard {
         Optional.ofNullable(numberPositionMap.get(number))
                 .ifPresent(position -> {
                     numberPositionMap.remove(number);
-                    if (this.rowCounters[position.row].incrementAndGet() == this.columnCounters.length) {
+                    if (this.rowCounters[position.row()].incrementAndGet() == this.columnCounters.length) {
                         this.bingo = true;
                     }
-                    if (this.columnCounters[position.column].incrementAndGet() == this.rowCounters.length) {
+                    if (this.columnCounters[position.column()].incrementAndGet() == this.rowCounters.length) {
                         this.bingo = true;
                     }
                 });
