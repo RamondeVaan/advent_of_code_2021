@@ -3,14 +3,15 @@ package nl.ramondevaan.aoc2021.day06;
 import nl.ramondevaan.aoc2021.util.Parser;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-public record FishByDayParser(int numberOfDays) implements Parser<String, List<Long>> {
+public class FishByDayParser implements Parser<String, Map<Integer, Long>> {
 
     @Override
-    public List<Long> parse(String toParse) {
-        long[] fishByDay = new long[numberOfDays];
-        Arrays.stream(toParse.split(",")).map(Integer::parseInt).forEach(day -> fishByDay[day]++);
-        return Arrays.stream(fishByDay).boxed().toList();
+    public Map<Integer, Long> parse(String toParse) {
+        return Arrays.stream(toParse.split(",")).map(Integer::parseInt)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     }
 }
