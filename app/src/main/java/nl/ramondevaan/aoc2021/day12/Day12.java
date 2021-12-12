@@ -1,10 +1,9 @@
 package nl.ramondevaan.aoc2021.day12;
 
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 
@@ -20,41 +19,34 @@ public class Day12 {
     }
 
     public long solve1() {
-        return solve((currentCave, caveInPathMap) -> caveConnectionMap.get(currentCave).stream()
-                .filter(option -> option.big() || caveInPathMap.get(option) == 0));
+        return solve((pathState) -> caveConnectionMap.get(pathState.tail()).stream()
+                .filter(option -> option.big() || !pathState.contains(option)));
     }
 
     public long solve2() {
-        return solve((currentCave, caveInPathMap) -> caveConnectionMap.get(currentCave).stream()
+        Set<Cave> smallCaves = caveConnectionMap.keySet().stream().filter(not(Cave::big))
+                .collect(Collectors.toUnmodifiableSet());
+        return solve((pathState) -> caveConnectionMap.get(pathState.tail()).stream()
                 .filter(option -> option.big()
-                        || caveInPathMap.get(option) == 0
-                        || caveInPathMap.values().stream().noneMatch(value -> value >= 2))
+                        || !pathState.contains(option)
+                        || smallCaves.stream().map(pathState::getOccurrences).noneMatch(value -> value >= 2))
                 .filter(not(START::equals)));
     }
 
-    private long solve(BiFunction<Cave, Map<Cave, Integer>, Stream<Cave>> optionProvider) {
-        Map<Cave, Integer> caveInPathMap = caveConnectionMap.keySet().stream().filter(not(Cave::big))
-                .collect(Collectors.toMap(Function.identity(), cave -> 0));
-        caveInPathMap.put(START, 1);
-        Deque<Cave> currentPath = new ArrayDeque<>(List.of(START));
-        List<List<Cave>> result = new ArrayList<>();
-        find(currentPath, caveInPathMap, result, optionProvider);
-        return result.size();
+    private long solve(OptionProvider optionProvider) {
+        CountingResultHandler resultHandler = new CountingResultHandler();
+        find(new PathStateImpl(START), optionProvider, resultHandler);
+        return resultHandler.getCount();
     }
 
-    private static void find(Deque<Cave> currentPath, Map<Cave, Integer> caveInPathMap, List<List<Cave>> result, BiFunction<Cave, Map<Cave, Integer>, Stream<Cave>> optionProvider) {
-        Cave currentCave = Optional.ofNullable(currentPath.peek()).orElseThrow();
-        if (currentCave.equals(END)) {
-            result.add(new ArrayList<>(currentPath));
-            return;
+    private static void find(PathState pathState, OptionProvider optionProvider, ResultHandler resultHandler) {
+        if (pathState.tail().equals(END)) {
+            resultHandler.handle(pathState);
+        } else {
+            optionProvider.options(pathState).forEach(option -> {
+                find(pathState.push(option), optionProvider, resultHandler);
+                pathState.pop();
+            });
         }
-
-        optionProvider.apply(currentCave, caveInPathMap).forEach(option -> {
-            currentPath.push(option);
-            caveInPathMap.computeIfPresent(option, (cave, occurrences) -> occurrences + 1);
-            find(currentPath, caveInPathMap, result, optionProvider);
-            caveInPathMap.computeIfPresent(option, (cave, occurrences) -> occurrences - 1);
-            currentPath.pop();
-        });
     }
 }
