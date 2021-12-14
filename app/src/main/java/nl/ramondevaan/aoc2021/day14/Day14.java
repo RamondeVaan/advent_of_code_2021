@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 public class Day14 {
 
     private final String polymerTemplate;
-    private final Map<String, String> pairToInsertionMap;
+    private final Map<Pair, Character> pairToInsertionMap;
 
     public Day14(List<String> lines) {
         PairToInsertionMapParser parser = new PairToInsertionMapParser();
@@ -32,22 +32,22 @@ public class Day14 {
     }
 
     private long solve(int numberOfSteps) {
-        Map<String, Long> occurrenceMap = IntStream.iterate(0, i -> i < polymerTemplate.length() - 1, i -> i + 1)
-                .mapToObj(i -> polymerTemplate.substring(i, i + 2))
+        Map<Pair, Long> occurrenceMap = IntStream.iterate(0, i -> i < polymerTemplate.length() - 1, i -> i + 1)
+                .mapToObj(i -> new Pair(polymerTemplate.charAt(i), polymerTemplate.charAt(i + 1)))
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         for (int i = 0; i < numberOfSteps; i++) {
             occurrenceMap = occurrenceMap.entrySet().stream()
                     .flatMap(entry -> Optional.ofNullable(pairToInsertionMap.get(entry.getKey()))
                             .map(insert -> Stream.of(
-                                    ImmutablePair.of(entry.getKey().charAt(0) + insert, entry.getValue()),
-                                    ImmutablePair.of(insert + entry.getKey().charAt(1), entry.getValue())
+                                    ImmutablePair.of(entry.getKey().withFirst(insert), entry.getValue()),
+                                    ImmutablePair.of(entry.getKey().withSecond(insert), entry.getValue())
                             )).orElse(Stream.of(ImmutablePair.of(entry.getKey(), entry.getValue()))))
                     .collect(counting());
         }
 
         LongSummaryStatistics statistics = occurrenceMap.entrySet().stream()
-                .flatMap(entry -> entry.getKey().chars().mapToObj(c -> ImmutablePair.of((char) c, entry.getValue())))
+                .flatMap(entry -> entry.getKey().stream().map(c -> ImmutablePair.of(c, entry.getValue())))
                 .collect(counting()).entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(
                         Map.Entry::getKey,

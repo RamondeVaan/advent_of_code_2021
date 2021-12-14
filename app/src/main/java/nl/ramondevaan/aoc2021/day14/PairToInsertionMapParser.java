@@ -8,16 +8,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class PairToInsertionMapParser implements Parser<List<String>, Map<String, String>> {
+public class PairToInsertionMapParser implements Parser<List<String>, Map<Pair, Character>> {
 
-    private final static Pattern PAIR_INSERTION_RULE_PATTERN = Pattern.compile("(?<pair>\\w+) -> (?<insertion>\\w+)");
+    private final static Pattern PAIR_INSERTION_RULE_PATTERN = Pattern.compile(
+            "(?<first>\\w)(?<second>\\w) -> (?<insertion>\\w+)");
 
-    public Map<String, String> parse(List<String> toParse) {
+    public Map<Pair, Character> parse(List<String> toParse) {
         return toParse.stream().map(PAIR_INSERTION_RULE_PATTERN::matcher)
                 .filter(Matcher::matches)
                 .collect(Collectors.toUnmodifiableMap(
-                        matcher -> matcher.group("pair"),
-                        matcher -> matcher.group("insertion")
+                        matcher -> new Pair(matcher.group("first").charAt(0), matcher.group("second").charAt(0)),
+                        matcher -> matcher.group("insertion").charAt(0)
                 ));
     }
 }
