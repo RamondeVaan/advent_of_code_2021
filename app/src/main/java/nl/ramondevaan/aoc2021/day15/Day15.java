@@ -2,9 +2,9 @@ package nl.ramondevaan.aoc2021.day15;
 
 import nl.ramondevaan.aoc2021.util.Coordinate;
 import nl.ramondevaan.aoc2021.util.CoordinateIntegerMapParser;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -28,41 +28,54 @@ public class Day15 {
 
     public long solve1() {
         Coordinate end = new Coordinate(rows - 1, columns - 1);
-        return minRiskMap(start, end, this.riskMap::containsKey, this.riskMap::get);
+        return solve(start, end, this.riskMap::containsKey, this.riskMap::get);
     }
 
     public long solve2() {
-        Predicate<Coordinate> rangeCheck = coordinate -> coordinate.row() >= 0 && coordinate.row() < rows * 5
-                && coordinate.column() >= 0 && coordinate.column() < columns * 5;
-        Function<Coordinate, Integer> riskFunction = coordinate -> {
-            int value = this.riskMap.get(new Coordinate(coordinate.row() % rows, coordinate.column() % columns));
-            return (value - 1 + coordinate.row() / rows + coordinate.column() / columns) % 9 + 1;
-        };
         Coordinate end = new Coordinate(rows * 5 - 1, columns * 5 - 1);
-        return minRiskMap(start, end, rangeCheck, riskFunction);
+        return solve(start, end, this::rangeCheckExtended, this::riskAtExtended);
     }
 
-    private static long minRiskMap(Coordinate source, Coordinate end, Predicate<Coordinate> inRangePredicate, Function<Coordinate, Integer> riskFunction) {
+    private boolean rangeCheckExtended(Coordinate coordinate) {
+        return coordinate.row() >= 0 && coordinate.row() < rows * 5
+                && coordinate.column() >= 0 && coordinate.column() < columns * 5;
+    }
+
+    private int riskAtExtended(Coordinate coordinate) {
+        int value = this.riskMap.get(new Coordinate(coordinate.row() % rows, coordinate.column() % columns));
+        return (value - 1 + coordinate.row() / rows + coordinate.column() / columns) % 9 + 1;
+    }
+
+    private static long solve(Coordinate source, Coordinate end, Predicate<Coordinate> isInRange, Function<Coordinate, Integer> riskFunction) {
         Set<Coordinate> handled = new HashSet<>();
-        TreeSet<ImmutablePair<Coordinate, Long>> set = new TreeSet<>((p1, p2) -> p1.right > p2.right ? 1 : -1);
-        set.add(ImmutablePair.of(source, 0L));
+        TreeMap<Long, Set<Coordinate>> map = new TreeMap<>();
+        map.put(0L, new HashSet<>(Set.of(source)));
         handled.add(source);
 
-        while (!set.isEmpty()) {
-            ImmutablePair<Coordinate, Long> current = Objects.requireNonNull(set.pollFirst());
-            for (Coordinate neighbor : current.left.directNeighbors()
-                    .filter(not(handled::contains))
-                    .filter(inRangePredicate)
-                    .collect(Collectors.toSet())) {
-                long risk = current.right + riskFunction.apply(neighbor);
-                if (neighbor.equals(end)) {
-                    return risk;
+        while (!map.isEmpty()) {
+            Map.Entry<Long, Set<Coordinate>> entry = map.pollFirstEntry();
+            for (Coordinate coordinate : entry.getValue()) {
+                Set<Coordinate> neighbors = coordinate.directNeighbors().filter(isInRange)
+                        .filter(not(handled::contains)).collect(Collectors.toSet());
+                for (Coordinate neighbor : neighbors) {
+                    long risk = entry.getKey() + riskFunction.apply(neighbor);
+                    if (neighbor.equals(end)) {
+                        return risk;
+                    }
+                    handled.add(neighbor);
+                    map.compute(risk, addOrCreate(neighbor));
                 }
-                handled.add(neighbor);
-                set.add(ImmutablePair.of(neighbor, risk));
             }
         }
 
         throw new IllegalStateException();
+    }
+
+    private static <K, V> BiFunction<? super K, ? super Set<V>, ? extends Set<V>> addOrCreate(V value) {
+        return (key, currentSet) -> {
+            Set<V> set = currentSet == null ? new HashSet<>() : currentSet;
+            set.add(value);
+            return set;
+        };
     }
 }
