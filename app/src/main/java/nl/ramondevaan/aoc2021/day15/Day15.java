@@ -1,81 +1,67 @@
 package nl.ramondevaan.aoc2021.day15;
 
 import nl.ramondevaan.aoc2021.util.Coordinate;
-import nl.ramondevaan.aoc2021.util.CoordinateIntegerMapParser;
 
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.List;
+import java.util.PriorityQueue;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
+import static java.util.Comparator.comparingInt;
 
 public class Day15 {
 
-    private final Map<Coordinate, Integer> riskMap;
+    private final RiskMap riskMap;
     private final Coordinate start;
-    private final int rows;
-    private final int columns;
 
     public Day15(List<String> lines) {
-        CoordinateIntegerMapParser parser = new CoordinateIntegerMapParser();
+        RiskMapParser parser = new RiskMapParser();
         this.riskMap = parser.parse(lines);
-        this.rows = this.riskMap.keySet().stream().mapToInt(Coordinate::row).max().orElseThrow() + 1;
-        this.columns = this.riskMap.keySet().stream().mapToInt(Coordinate::column).max().orElseThrow() + 1;
         this.start = new Coordinate(0, 0);
     }
 
     public long solve1() {
-        Coordinate end = new Coordinate(rows - 1, columns - 1);
-        return solve(start, end, this.riskMap::containsKey, this.riskMap::get);
+        Coordinate end = new Coordinate(riskMap.rows() - 1, riskMap.columns() - 1);
+        return solve(start, end, riskMap);
     }
 
     public long solve2() {
-        Coordinate end = new Coordinate(rows * 5 - 1, columns * 5 - 1);
-        return solve(start, end, this::rangeCheckExtended, this::riskAtExtended);
+        Stream<IntStream> extendedValueStream = IntStream.range(0, riskMap.rows() * 5).boxed()
+                .map(row -> IntStream.range(0, riskMap.columns() * 5).map(column -> extendedValueAt(row, column)));
+        RiskMap extendedRiskMap = new RiskMap(extendedValueStream);
+
+        Coordinate end = new Coordinate(extendedRiskMap.rows() - 1, extendedRiskMap.columns() - 1);
+        return solve(start, end, extendedRiskMap);
     }
 
-    private boolean rangeCheckExtended(Coordinate coordinate) {
-        return coordinate.row() >= 0 && coordinate.row() < rows * 5
-                && coordinate.column() >= 0 && coordinate.column() < columns * 5;
+    private int extendedValueAt(int row, int column) {
+        int mappedValue = riskMap.valueAt(row % riskMap.rows(), column % riskMap.columns());
+        int offset = row / riskMap.rows() + column / riskMap.columns();
+        return (mappedValue - 1 + offset) % 9 + 1;
     }
 
-    private int riskAtExtended(Coordinate coordinate) {
-        int value = this.riskMap.get(new Coordinate(coordinate.row() % rows, coordinate.column() % columns));
-        return (value - 1 + coordinate.row() / rows + coordinate.column() / columns) % 9 + 1;
-    }
+    private static int solve(Coordinate source, Coordinate end, RiskMap riskMap) {
+        RiskMap.Builder builder = RiskMap.builder(riskMap.rows(), riskMap.columns());
+        builder.fill(Integer.MAX_VALUE);
+        PriorityQueue<Coordinate> queue = new PriorityQueue<>(riskMap.size(), comparingInt(builder::valueAt));
+        builder.setValue(source, 0);
+        queue.add(source);
 
-    private static long solve(Coordinate source, Coordinate end, Predicate<Coordinate> isInRange, Function<Coordinate, Integer> riskFunction) {
-        Set<Coordinate> handled = new HashSet<>();
-        TreeMap<Long, Set<Coordinate>> map = new TreeMap<>();
-        map.put(0L, new HashSet<>(Set.of(source)));
-        handled.add(source);
-
-        while (!map.isEmpty()) {
-            Map.Entry<Long, Set<Coordinate>> entry = map.pollFirstEntry();
-            for (Coordinate coordinate : entry.getValue()) {
-                Set<Coordinate> neighbors = coordinate.directNeighbors().filter(isInRange)
-                        .filter(not(handled::contains)).collect(Collectors.toSet());
-                for (Coordinate neighbor : neighbors) {
-                    long risk = entry.getKey() + riskFunction.apply(neighbor);
-                    if (neighbor.equals(end)) {
-                        return risk;
-                    }
-                    handled.add(neighbor);
-                    map.compute(risk, addOrCreate(neighbor));
-                }
+        Coordinate coordinate;
+        while ((coordinate = queue.poll()) != null) {
+            if (coordinate.equals(end)) {
+                return builder.valueAt(end);
             }
+            int currentRisk = builder.valueAt(coordinate);
+            coordinate.directNeighbors().filter(riskMap::contains)
+                    .filter(c -> builder.valueAt(c) == Integer.MAX_VALUE).collect(Collectors.toSet())
+                    .forEach(neighbor -> {
+                        builder.setValue(neighbor, currentRisk + riskMap.valueAt(neighbor));
+                        queue.add(neighbor);
+                    });
         }
 
         throw new IllegalStateException();
-    }
-
-    private static <K, V> BiFunction<? super K, ? super Set<V>, ? extends Set<V>> addOrCreate(V value) {
-        return (key, currentSet) -> {
-            Set<V> set = currentSet == null ? new HashSet<>() : currentSet;
-            set.add(value);
-            return set;
-        };
     }
 }
