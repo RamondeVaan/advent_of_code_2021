@@ -1,6 +1,7 @@
 package nl.ramondevaan.aoc2021.day05;
 
 import nl.ramondevaan.aoc2021.util.Parser;
+import nl.ramondevaan.aoc2021.util.Position;
 
 import java.util.List;
 import java.util.stream.Stream;
