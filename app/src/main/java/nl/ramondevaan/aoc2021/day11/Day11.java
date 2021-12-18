@@ -1,70 +1,69 @@
 package nl.ramondevaan.aoc2021.day11;
 
 import nl.ramondevaan.aoc2021.util.Coordinate;
-import nl.ramondevaan.aoc2021.util.CoordinateIntegerMapParser;
+import nl.ramondevaan.aoc2021.util.IntMap;
+import nl.ramondevaan.aoc2021.util.IntMapParser;
+import nl.ramondevaan.aoc2021.util.MutableIntMap;
 
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.function.Predicate.not;
 
 public class Day11 {
 
-    private final Map<Coordinate, Integer> octopusGrid;
+    private final IntMap octopusGrid;
 
     public Day11(List<String> lines) {
-        CoordinateIntegerMapParser parser = new CoordinateIntegerMapParser();
+        IntMapParser parser = new IntMapParser();
         this.octopusGrid = parser.parse(lines);
     }
 
     public long solve1() {
-        Map<Coordinate, Integer> grid = new HashMap<>(octopusGrid);
+        MutableIntMap grid = new MutableIntMap(octopusGrid);
 
         long flashCount = 0L;
         for (int i = 0; i < 100; i++) {
-            grid = step(grid);
-            flashCount += countFlashes(grid);
+            step(grid);
+            flashCount += countFlashes(grid.values());
         }
         return flashCount;
     }
 
     public long solve2() {
-        Map<Coordinate, Integer> grid = new HashMap<>(octopusGrid);
+        MutableIntMap grid = new MutableIntMap(octopusGrid);
 
         for (long step = 1L; true; step++) {
-            grid = step(grid);
-            if (countFlashes(grid) == grid.size()) {
+            step(grid);
+            if (countFlashes(grid.values()) == grid.size()) {
                 return step;
             }
         }
     }
 
-    private Map<Coordinate, Integer> step(Map<Coordinate, Integer> grid) {
-        Map<Coordinate, Integer> next = new HashMap<>(grid);
-        Consumer<Coordinate> increment = key -> next.computeIfPresent(key, (coordinate, integer) -> integer + 1);
-        next.keySet().forEach(increment);
+    private void step(MutableIntMap grid) {
+        grid.computeAll((value) -> value + 1);
 
-        Set<Coordinate> toFlash = next.entrySet().stream().filter(entry -> entry.getValue() >= 10)
-                .map(Map.Entry::getKey).collect(Collectors.toUnmodifiableSet());
-        Set<Coordinate> flashed = new HashSet<>();
+        boolean[][] flashed = new boolean[grid.rows()][grid.columns()];
+        Set<Coordinate> toFlash = grid.keys().filter(coordinate -> grid.valueAt(coordinate) >= 10)
+                .collect(Collectors.toUnmodifiableSet());
 
         while (!toFlash.isEmpty()) {
-            flashed.addAll(toFlash);
+            toFlash.forEach(coordinate -> flashed[coordinate.row()][coordinate.column()] = true);
             toFlash = toFlash.stream()
-                    .peek(coordinate -> next.put(coordinate, 0))
+                    .peek(coordinate -> grid.setValueAt(coordinate, 0))
                     .flatMap(Coordinate::allNeighbors)
-                    .filter(next::containsKey)
-                    .filter(not(flashed::contains))
-                    .peek(increment)
-                    .filter(coordinate -> next.get(coordinate) >= 10)
+                    .filter(grid::contains)
+                    .filter(not(coordinate -> flashed[coordinate.row()][coordinate.column()]))
+                    .peek(neighbor -> grid.compute(neighbor, (value) -> value + 1))
+                    .filter(coordinate -> grid.valueAt(coordinate) >= 10)
                     .collect(Collectors.toUnmodifiableSet());
         }
-
-        return next;
     }
 
-    private static long countFlashes(Map<Coordinate, Integer> grid) {
-        return grid.values().stream().filter(value -> value == 0).count();
+    private static long countFlashes(IntStream values) {
+        return values.filter(value -> value == 0).count();
     }
 }

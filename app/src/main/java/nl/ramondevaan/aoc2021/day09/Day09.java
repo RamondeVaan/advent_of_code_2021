@@ -1,8 +1,9 @@
 package nl.ramondevaan.aoc2021.day09;
 
 import nl.ramondevaan.aoc2021.util.Coordinate;
-import nl.ramondevaan.aoc2021.util.CoordinateIntegerMapParser;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import nl.ramondevaan.aoc2021.util.IntMap;
+import nl.ramondevaan.aoc2021.util.IntMapEntry;
+import nl.ramondevaan.aoc2021.util.IntMapParser;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -13,22 +14,22 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class Day09 {
 
-    private final Map<Coordinate, Integer> heightMap;
+    private final IntMap heightMap;
 
     public Day09(List<String> lines) {
-        CoordinateIntegerMapParser parser = new CoordinateIntegerMapParser();
+        IntMapParser parser = new IntMapParser();
         this.heightMap = parser.parse(lines);
     }
 
     public long solve1() {
         return getLocalMinima()
-                .mapToLong(pair -> pair.getValue() + 1L)
+                .mapToLong(pair -> pair.value() + 1L)
                 .sum();
     }
 
     public long solve2() {
         return getLocalMinima()
-                .map(Map.Entry::getKey)
+                .map(IntMapEntry::coordinate)
                 .map(this::getBasin)
                 .sorted(Comparator.<Collection<Coordinate>>comparingInt(Collection::size).reversed())
                 .limit(3)
@@ -36,13 +37,12 @@ public class Day09 {
                 .reduce(1L, (left, right) -> left * right);
     }
 
-    private Stream<Map.Entry<Coordinate, Integer>> getLocalMinima() {
-        return heightMap.entrySet().stream()
-                .filter(entry -> entry.getKey().directNeighbors()
-                        .filter(heightMap::containsKey)
-                        .map(heightMap::get)
-                        .allMatch(value -> value > entry.getValue()))
-                .map(entry -> ImmutablePair.of(entry.getKey(), entry.getValue()));
+    private Stream<IntMapEntry> getLocalMinima() {
+        return heightMap.entries()
+                .filter(entry -> entry.coordinate().directNeighbors()
+                        .filter(heightMap::contains)
+                        .map(heightMap::valueAt)
+                        .allMatch(value -> value > entry.value()));
     }
 
     private Collection<Coordinate> getBasin(Coordinate origin) {
@@ -62,13 +62,13 @@ public class Day09 {
     }
 
     private Predicate<Coordinate> largerThan(Coordinate coordinate) {
-        return neighbor -> heightMap.get(neighbor) >= heightMap.get(coordinate);
+        return neighbor -> heightMap.valueAt(neighbor) >= heightMap.valueAt(coordinate);
     }
 
     private Stream<Coordinate> validNeighbors(Coordinate coordinate, Set<Coordinate> basin) {
         return coordinate.directNeighbors().filter(not(basin::contains))
-                .filter(neighbor -> Optional.ofNullable(heightMap.get(neighbor))
-                        .filter(value -> value < 9).isPresent());
+                .filter(heightMap::contains)
+                .filter(neighbor -> heightMap.valueAt(neighbor) < 9);
     }
 
     private record Tuple(Coordinate coordinate, Set<Coordinate> neighbors) {
