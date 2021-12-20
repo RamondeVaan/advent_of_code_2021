@@ -1,14 +1,13 @@
 package nl.ramondevaan.aoc2021.day18;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static nl.ramondevaan.aoc2021.util.CombinatoricsUtils.allPairs;
 
 public class Day18 {
 
@@ -116,10 +115,8 @@ public class Day18 {
     }
 
     public long solve2() {
-        return IntStream.range(0, numbers.size()).boxed().flatMap(left -> IntStream.range(left + 1, numbers.size())
-                .mapToObj(right -> ImmutablePair.of(left, right)))
-                .flatMap(pair -> Stream.of(pair, new ImmutablePair<>(pair.right, pair.left)))
-                .map(pair -> add(numbers.get(pair.left), numbers.get(pair.right)))
+        return allPairs(numbers.size())
+                .map(pair -> add(numbers.get(pair.left()), numbers.get(pair.right())))
                 .mapToLong(this::magnitude)
                 .max().orElseThrow();
     }

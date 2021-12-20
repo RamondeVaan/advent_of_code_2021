@@ -9,4 +9,8 @@ public class CombinatoricsUtils {
                 .flatMap(left -> IntStream.range(left + 1, size)
                         .mapToObj(right -> new Pair(left, right)));
     }
+
+    public static Stream<Pair> allPairs(int size) {
+        return pairs(size).flatMap(pair -> Stream.of(pair, new Pair(pair.right(), pair.left())));
+    }
 }
