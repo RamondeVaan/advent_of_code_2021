@@ -10,11 +10,16 @@ public record Cave(String name, boolean big, Set<Cave> options) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Cave cave = (Cave) o;
-        return big == cave.big && name.equals(cave.name);
+        return name.equals(cave.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, big);
+        return Objects.hash(name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

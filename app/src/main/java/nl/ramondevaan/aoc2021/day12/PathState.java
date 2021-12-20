@@ -6,8 +6,6 @@ public interface PathState {
 
     void pop();
 
-    int getOccurrences(Cave cave);
-
     Cave tail();
 
     boolean contains(Cave cave);

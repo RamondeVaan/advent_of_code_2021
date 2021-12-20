@@ -40,18 +40,13 @@ public class PathStateImpl implements PathState {
     }
 
     @Override
-    public int getOccurrences(Cave cave) {
-        return occurrences.getOrDefault(cave, 0);
-    }
-
-    @Override
     public Cave tail() {
         return this.stack.peek();
     }
 
     @Override
     public boolean contains(Cave cave) {
-        return getOccurrences(cave) > 0;
+        return occurrences.getOrDefault(cave, 0) > 0;
     }
 
     @Override
