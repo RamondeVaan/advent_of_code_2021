@@ -1,21 +1,30 @@
 package nl.ramondevaan.aoc2021.day05;
 
-import nl.ramondevaan.aoc2021.util.Position;
-
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.lang.Integer.signum;
 
 public class Day05 {
 
     private final List<LineSegment> lineSegments;
+    private final int xMax;
+    private final int yMax;
 
     public Day05(List<String> lines) {
         LineSegmentParser lineSegmentParser = new LineSegmentParser();
-
         this.lineSegments = lines.stream().map(lineSegmentParser::parse).toList();
+
+        int xMax = Integer.MIN_VALUE;
+        int yMax = Integer.MIN_VALUE;
+        for (LineSegment lineSegment : lineSegments) {
+            xMax = Math.max(lineSegment.start().x(), xMax);
+            xMax = Math.max(lineSegment.end().x(), xMax);
+            yMax = Math.max(lineSegment.start().y(), yMax);
+            yMax = Math.max(lineSegment.end().y(), yMax);
+        }
+        this.xMax = xMax + 1;
+        this.yMax = yMax + 1;
     }
 
     public long solve1() {
@@ -29,17 +38,39 @@ public class Day05 {
         return countPointsOfOverlap(lineSegments.stream());
     }
 
-    private static long countPointsOfOverlap(Stream<LineSegment> lineSegmentStream) {
-        PositionsParser positionsParser = new PositionsParser();
+    private long countPointsOfOverlap(Stream<LineSegment> lineSegmentStream) {
+        int[][] grid = new int[xMax][yMax];
 
-        Map<Position, Long> occurences = lineSegmentStream
-                .map(positionsParser::parse)
-                .flatMap(List::stream)
-                .collect(Collectors.groupingBy(
-                        Function.identity(),
-                        Collectors.counting()
-                ));
+        lineSegmentStream.forEach(lineSegment -> {
+            int distX = lineSegment.end().x() - lineSegment.start().x();
+            int distY = lineSegment.end().y() - lineSegment.start().y();
+            int distance = Math.max(Math.abs(distX), Math.abs(distY));
+            int dx = signum(distX);
+            int dy = signum(distY);
 
-        return occurences.entrySet().stream().filter(entry -> entry.getValue() > 1).count();
+            int currentX = lineSegment.start().x();
+            int currentY = lineSegment.start().y();
+
+            grid[currentX][currentY]++;
+
+            for (int i = 0; i < distance; i++) {
+                currentX += dx;
+                currentY += dy;
+
+                grid[currentX][currentY]++;
+            }
+        });
+
+        long count = 0;
+
+        for (int x = 0; x < xMax; x++) {
+            for (int y = 0; y < yMax; y++) {
+                if (grid[x][y] > 1) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 }
