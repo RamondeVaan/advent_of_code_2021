@@ -3,19 +3,17 @@ package nl.ramondevaan.aoc2021.day12;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 
 public class Day12 {
 
-    private final Set<Cave> caves;
     private final Cave start;
     private final Cave end;
 
     public Day12(List<String> lines) {
         CaveConnectionMapParser parser = new CaveConnectionMapParser();
-        this.caves = parser.parse(lines);
+        Set<Cave> caves = parser.parse(lines);
         this.start = caves.stream().filter(cave -> cave.name().equals("start")).findAny().orElseThrow();
         this.end = caves.stream().filter(cave -> cave.name().equals("end")).findAny().orElseThrow();
     }
@@ -26,11 +24,8 @@ public class Day12 {
     }
 
     public long solve2() {
-        Set<Cave> smallCaves = caves.stream().filter(not(Cave::big)).collect(Collectors.toUnmodifiableSet());
         return solve((pathState) -> pathState.tail().options().stream()
-                .filter(option -> option.big()
-                        || !pathState.contains(option)
-                        || smallCaves.stream().map(pathState::getOccurrences).allMatch(value -> value < 2))
+                .filter(option -> option.big() || !pathState.contains(option) || !pathState.smallCaveVisitedTwice())
                 .filter(not(start::equals)));
     }
 

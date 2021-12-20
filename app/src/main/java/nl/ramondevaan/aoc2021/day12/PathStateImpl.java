@@ -9,6 +9,7 @@ public class PathStateImpl implements PathState {
 
     private final Deque<Cave> stack;
     private final Map<Cave, Integer> occurrences;
+    private boolean smallCaveVisitedTwice;
 
     public PathStateImpl(Cave tail) {
         this.stack = new ArrayDeque<>();
@@ -19,14 +20,23 @@ public class PathStateImpl implements PathState {
 
     @Override
     public PathState push(Cave cave) {
-        this.occurrences.compute(cave, (key, occurrences) -> occurrences == null ? 1 : occurrences + 1);
+        int occurrence = this.occurrences.getOrDefault(cave, 0);
+        this.occurrences.put(cave, occurrence + 1);
         this.stack.push(cave);
+        if (!cave.big() && occurrence == 1) {
+            smallCaveVisitedTwice = true;
+        }
         return this;
     }
 
     @Override
     public void pop() {
-        occurrences.computeIfPresent(this.stack.pop(), (cave, occurrences) -> occurrences - 1);
+        Cave removed = this.stack.pop();
+        int occurrence = occurrences.get(removed);
+        occurrences.put(removed, occurrence - 1);
+        if (!removed.big() && occurrence == 2) {
+            this.smallCaveVisitedTwice = false;
+        }
     }
 
     @Override
@@ -42,5 +52,10 @@ public class PathStateImpl implements PathState {
     @Override
     public boolean contains(Cave cave) {
         return getOccurrences(cave) > 0;
+    }
+
+    @Override
+    public boolean smallCaveVisitedTwice() {
+        return smallCaveVisitedTwice;
     }
 }

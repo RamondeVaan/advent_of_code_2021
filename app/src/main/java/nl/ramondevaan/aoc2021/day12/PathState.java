@@ -11,4 +11,6 @@ public interface PathState {
     Cave tail();
 
     boolean contains(Cave cave);
+
+    boolean smallCaveVisitedTwice();
 }
