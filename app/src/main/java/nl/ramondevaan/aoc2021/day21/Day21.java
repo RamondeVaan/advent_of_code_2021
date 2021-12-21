@@ -74,8 +74,8 @@ public class Day21 {
 
             for (int i = 0; i < len; i++) {
                 int[] state = toCheck[i];
-                long arity = intState[player][state[0]][state[1]][state[2]][state[3]];
-                if (arity == 0L) {
+                long worlds = intState[player][state[0]][state[1]][state[2]][state[3]];
+                if (worlds == 0L) {
                     continue;
                 }
 
@@ -87,11 +87,11 @@ public class Day21 {
                         int score = state[1] + position + 1;
 
                         if (score >= DIRAC_MAX_SCORE) {
-                            playerWins[player] += arity * option.multiplier;
+                            playerWins[player] += worlds * option.multiplier;
                             continue;
                         }
 
-                        intState[1][position][score][state[2]][state[3]] += arity * option.multiplier;
+                        intState[1][position][score][state[2]][state[3]] += worlds * option.multiplier;
 
                         nextToCheck[nextLen][0] = position;
                         nextToCheck[nextLen][1] = score;
@@ -105,11 +105,11 @@ public class Day21 {
                         int score = state[3] + position + 1;
 
                         if (score >= DIRAC_MAX_SCORE) {
-                            playerWins[player] += arity * option.multiplier;
+                            playerWins[player] += worlds * option.multiplier;
                             continue;
                         }
 
-                        intState[0][state[0]][state[1]][position][score] += arity * option.multiplier;
+                        intState[0][state[0]][state[1]][position][score] += worlds * option.multiplier;
 
                         nextToCheck[nextLen][0] = state[0];
                         nextToCheck[nextLen][1] = state[1];
