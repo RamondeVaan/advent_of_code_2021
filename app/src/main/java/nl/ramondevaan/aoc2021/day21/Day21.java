@@ -2,11 +2,11 @@ package nl.ramondevaan.aoc2021.day21;
 
 import com.google.common.math.IntMath;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 public class Day21 {
 
@@ -49,60 +49,78 @@ public class Day21 {
                         Collectors.counting()
                 )).entrySet().stream().map(entry -> new Throw(entry.getKey(), entry.getValue())).toArray(Throw[]::new);
 
-        return solve3(throwOptions, new GameState(playerPositions.get(0), playerPositions.get(1), 0, 0, true));
-    }
+        long[][][][][] intState = new long[2][10][21][10][21];
+        int p1Position = playerPositions.get(0);
+        int p2Position = playerPositions.get(1);
 
-    private long solve3(Throw[] throwOptions, GameState gameState) {
-        Map<GameState, Long> stateMap = Map.of(gameState, 1L);
+        intState[0][p1Position][0][p2Position][0] = 1L;
 
-        long playerOneWins = 0L;
-        long playerTwoWins = 0L;
+        int[][] toCheck = new int[10 * 21 * 10 * 21][4];
+        int[][] nextToCheck = new int[10 * 21 * 10 * 21][4];
+        toCheck[0] = new int[]{p1Position, 0, p2Position, 0};
 
-        while (!stateMap.isEmpty()) {
-            Map<GameState, Long> newStateMap = new HashMap<>();
+        long[] playerWins = new long[]{0L, 0L};
+        int player = 0;
+        int len = 1;
 
-            for (Map.Entry<GameState, Long> entry : stateMap.entrySet()) {
-                GameState state = entry.getKey();
-                long arity = entry.getValue();
-                if (state.playerOneScore() >= 21) {
-                    playerOneWins += arity;
+        while (len > 0) {
+            int nextLen = 0;
+
+            for (int i = 0; i < len; i++) {
+                int[] state = toCheck[i];
+                long arity = intState[player][state[0]][state[1]][state[2]][state[3]];
+                if (arity == 0L) {
                     continue;
                 }
-                if (state.playerTwoScore() >= 21) {
-                    playerTwoWins += arity;
-                    continue;
-                }
-                for (Throw option : throwOptions) {
-                    int playerOnePosition, playerTwoPosition, playerOneScore, playerTwoScore;
-                    if (state.playerOneTurn()) {
-                        playerOnePosition = (state.playerOnePosition() + option.value) % 10;
-                        playerTwoPosition = state.playerTwoPosition();
-                        playerOneScore = state.playerOneScore() + playerOnePosition + 1;
-                        playerTwoScore = state.playerTwoScore();
-                    } else {
-                        playerOnePosition = state.playerOnePosition();
-                        playerTwoPosition = (state.playerTwoPosition() + option.value) % 10;
-                        playerOneScore = state.playerOneScore();
-                        playerTwoScore = state.playerTwoScore() + playerTwoPosition + 1;
+
+                intState[player][state[0]][state[1]][state[2]][state[3]] = 0;
+
+                if (player == 0) {
+                    for (Throw option : throwOptions) {
+                        int position = (state[0] + option.value) % 10;
+                        int score = state[1] + position + 1;
+
+                        if (score >= 21) {
+                            playerWins[player] += arity * option.multiplier;
+                            continue;
+                        }
+
+                        intState[1][position][score][state[2]][state[3]] += arity * option.multiplier;
+
+                        nextToCheck[nextLen][0] = position;
+                        nextToCheck[nextLen][1] = score;
+                        nextToCheck[nextLen][2] = state[2];
+                        nextToCheck[nextLen][3] = state[3];
+                        nextLen++;
                     }
-                    GameState newState = new GameState(
-                            playerOnePosition,
-                            playerTwoPosition,
-                            playerOneScore,
-                            playerTwoScore,
-                            !state.playerOneTurn()
-                    );
-                    newStateMap.merge(newState, arity * option.multiplier, Long::sum);
+                } else {
+                    for (Throw option : throwOptions) {
+                        int position = (state[2] + option.value) % 10;
+                        int score = state[3] + position + 1;
+
+                        if (score >= 21) {
+                            playerWins[player] += arity * option.multiplier;
+                            continue;
+                        }
+
+                        intState[0][state[0]][state[1]][position][score] += arity * option.multiplier;
+
+                        nextToCheck[nextLen][0] = state[0];
+                        nextToCheck[nextLen][1] = state[1];
+                        nextToCheck[nextLen][2] = position;
+                        nextToCheck[nextLen][3] = score;
+                        nextLen++;
+                    }
                 }
             }
-
-            stateMap.forEach((state, arity) -> {
-            });
-
-            stateMap = newStateMap;
+            len = nextLen;
+            int[][] temp = toCheck;
+            toCheck = nextToCheck;
+            nextToCheck = temp;
+            player = (player + 1) % 2;
         }
 
-        return LongStream.of(playerOneWins, playerTwoWins).max().orElseThrow();
+        return Math.max(playerWins[0], playerWins[1]);
     }
 
     private record Throw(int value, long multiplier) {
