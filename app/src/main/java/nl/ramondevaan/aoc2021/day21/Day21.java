@@ -10,6 +10,14 @@ import java.util.stream.IntStream;
 
 public class Day21 {
 
+    private final static int POSITIONS = 10;
+    private final static int DIRAC_MAX_SCORE = 21;
+    private final static int DETERMINISTIC_MAX_SCORE = 1000;
+    private final static int DETERMINISTIC_DIE_SIZE = 100;
+    private final static int MAX_GAME_STATES = POSITIONS * POSITIONS * DIRAC_MAX_SCORE * DIRAC_MAX_SCORE;
+    private final static int DIE_SIDES = 3;
+    private final static int ROLLS = 3;
+
     private final List<Integer> playerPositions;
 
     public Day21(List<String> lines) {
@@ -23,14 +31,14 @@ public class Day21 {
         int die = 1;
 
         int turn = 0;
-        for (; Arrays.stream(scores).noneMatch(score -> score >= 1000); turn++) {
+        for (; Arrays.stream(scores).noneMatch(score -> score >= DETERMINISTIC_MAX_SCORE); turn++) {
             int player = turn % positions.length;
             int totalRoll = 0;
-            for (int roll = 0; roll < 3; roll++) {
+            for (int roll = 0; roll < ROLLS; roll++) {
                 totalRoll += die;
-                die = (die % 100) + 1;
+                die = (die % DETERMINISTIC_DIE_SIZE) + 1;
             }
-            positions[player] = (positions[player] + totalRoll) % 10;
+            positions[player] = (positions[player] + totalRoll) % POSITIONS;
             scores[player] += positions[player] + 1;
         }
 
@@ -38,25 +46,23 @@ public class Day21 {
     }
 
     public long solve2() {
-        int diceSides = 3;
-        int rolls = 3;
-        Throw[] throwOptions = IntStream.range(0, IntMath.pow(diceSides, rolls))
-                .map(i -> IntStream.range(0, rolls)
-                        .reduce(0, (last, exp) -> last + i / IntMath.pow(diceSides, exp) % diceSides + 1))
+        Throw[] throwOptions = IntStream.range(0, IntMath.pow(DIE_SIDES, ROLLS))
+                .map(i -> IntStream.range(0, ROLLS)
+                        .reduce(0, (last, exp) -> last + i / IntMath.pow(DIE_SIDES, exp) % DIE_SIDES + 1))
                 .boxed()
                 .collect(Collectors.groupingBy(
                         Function.identity(),
                         Collectors.counting()
                 )).entrySet().stream().map(entry -> new Throw(entry.getKey(), entry.getValue())).toArray(Throw[]::new);
 
-        long[][][][][] intState = new long[2][10][21][10][21];
+        long[][][][][] intState = new long[2][POSITIONS][DIRAC_MAX_SCORE][POSITIONS][DIRAC_MAX_SCORE];
         int p1Position = playerPositions.get(0);
         int p2Position = playerPositions.get(1);
 
         intState[0][p1Position][0][p2Position][0] = 1L;
 
-        int[][] toCheck = new int[10 * 21 * 10 * 21][4];
-        int[][] nextToCheck = new int[10 * 21 * 10 * 21][4];
+        int[][] toCheck = new int[MAX_GAME_STATES][4];
+        int[][] nextToCheck = new int[MAX_GAME_STATES][4];
         toCheck[0] = new int[]{p1Position, 0, p2Position, 0};
 
         long[] playerWins = new long[]{0L, 0L};
@@ -80,7 +86,7 @@ public class Day21 {
                         int position = (state[0] + option.value) % 10;
                         int score = state[1] + position + 1;
 
-                        if (score >= 21) {
+                        if (score >= DIRAC_MAX_SCORE) {
                             playerWins[player] += arity * option.multiplier;
                             continue;
                         }
@@ -98,7 +104,7 @@ public class Day21 {
                         int position = (state[2] + option.value) % 10;
                         int score = state[3] + position + 1;
 
-                        if (score >= 21) {
+                        if (score >= DIRAC_MAX_SCORE) {
                             playerWins[player] += arity * option.multiplier;
                             continue;
                         }
