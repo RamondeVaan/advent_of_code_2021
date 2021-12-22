@@ -25,24 +25,23 @@ public class Day22 {
     }
 
     private static long solve(Stream<Step> steps) {
-        List<Step> result = new ArrayList<>();
+        List<Cuboid> on = new ArrayList<>();
 
         steps.forEach(newStep -> {
-            ListIterator<Step> currentIterator = result.listIterator();
-            while (currentIterator.hasNext()) {
-                Step currentStep = currentIterator.next();
-                currentStep.cuboid().overlap(newStep.cuboid()).ifPresent(overlap -> {
-                    currentIterator.remove();
-                    currentStep.cuboid().without(overlap)
-                            .forEach(cuboid -> currentIterator.add(new Step(currentStep.on(), cuboid)));
+            ListIterator<Cuboid> iterator = on.listIterator();
+            while (iterator.hasNext()) {
+                Cuboid currentStep = iterator.next();
+                currentStep.overlap(newStep.cuboid()).ifPresent(overlap -> {
+                    iterator.remove();
+                    currentStep.without(overlap).forEach(iterator::add);
                 });
             }
             if (newStep.on()) {
-                result.add(newStep);
+                on.add(newStep.cuboid());
             }
         });
 
-        return result.stream().filter(Step::on).map(Step::cuboid).mapToLong(Cuboid::size).sum();
+        return on.stream().mapToLong(Cuboid::size).sum();
     }
 
 }
