@@ -30,10 +30,10 @@ public class Day22 {
         steps.forEach(newStep -> {
             ListIterator<Cuboid> iterator = on.listIterator();
             while (iterator.hasNext()) {
-                Cuboid currentStep = iterator.next();
-                currentStep.overlap(newStep.cuboid()).ifPresent(overlap -> {
+                Cuboid currentCuboid = iterator.next();
+                currentCuboid.overlap(newStep.cuboid()).ifPresent(overlap -> {
                     iterator.remove();
-                    currentStep.without(overlap).forEach(iterator::add);
+                    currentCuboid.without(overlap).forEach(iterator::add);
                 });
             }
             if (newStep.on()) {
