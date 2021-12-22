@@ -3,7 +3,7 @@ package nl.ramondevaan.aoc2021.day22;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 public class Day22 {
 
@@ -17,46 +17,30 @@ public class Day22 {
     public long solve1() {
         Range range = new Range(-50, 50);
         Cuboid cuboid = new Cuboid(range, range, range);
-        return solve(steps.stream().filter(step -> step.cuboid().containedIn(cuboid)).toList());
+        return solve(steps.stream().filter(step -> step.cuboid().containedIn(cuboid)));
     }
 
     public long solve2() {
-        return solve(steps);
+        return solve(steps.stream());
     }
 
-    private static long solve(List<Step> steps) {
+    private static long solve(Stream<Step> steps) {
         List<Step> result = new ArrayList<>();
 
-        for (Step newStep : steps) {
-            List<Step> toCheck = new ArrayList<>(List.of(newStep));
-            while (!toCheck.isEmpty()) {
-                ListIterator<Step> toCheckIterator = toCheck.listIterator();
-                outer:
-                while (toCheckIterator.hasNext()) {
-                    Step stepToCheck = toCheckIterator.next();
-                    toCheckIterator.remove();
-                    ListIterator<Step> currentIterator = result.listIterator();
-                    while (currentIterator.hasNext()) {
-                        Step currentStep = currentIterator.next();
-                        Optional<Cuboid> optionalOverlap = currentStep.cuboid().overlap(stepToCheck.cuboid());
-                        if (optionalOverlap.isPresent()) {
-                            Cuboid overlap = optionalOverlap.get();
-                            if (stepToCheck.on() != currentStep.on()) {
-                                currentIterator.remove();
-                                currentStep.cuboid().without(overlap)
-                                        .forEach(cuboid -> currentIterator.add(new Step(currentStep.on(), cuboid)));
-                                currentIterator.add(new Step(stepToCheck.on(), overlap));
-                            }
-                            stepToCheck.cuboid().without(overlap)
-                                    .forEach(cuboid -> toCheckIterator.add(new Step(stepToCheck.on(), cuboid)));
-                            continue outer;
-                        }
-                    }
-                    result.add(stepToCheck);
-                }
+        steps.forEach(newStep -> {
+            ListIterator<Step> currentIterator = result.listIterator();
+            while (currentIterator.hasNext()) {
+                Step currentStep = currentIterator.next();
+                currentStep.cuboid().overlap(newStep.cuboid()).ifPresent(overlap -> {
+                    currentIterator.remove();
+                    currentStep.cuboid().without(overlap)
+                            .forEach(cuboid -> currentIterator.add(new Step(currentStep.on(), cuboid)));
+                });
             }
-
-        }
+            if (newStep.on()) {
+                result.add(newStep);
+            }
+        });
 
         return result.stream().filter(Step::on).map(Step::cuboid).mapToLong(Cuboid::size).sum();
     }
