@@ -17,6 +17,11 @@ public class Day21 {
     private final static int MAX_GAME_STATES = POSITIONS * POSITIONS * DIRAC_MAX_SCORE * DIRAC_MAX_SCORE;
     private final static int DIE_SIDES = 3;
     private final static int ROLLS = 3;
+    private final static Throw[] THROW_OPTIONS = IntStream.range(0, IntMath.pow(DIE_SIDES, ROLLS))
+            .map(i -> IntStream.range(0, ROLLS)
+                    .reduce(0, (last, exp) -> last + i / IntMath.pow(DIE_SIDES, exp) % DIE_SIDES + 1))
+            .boxed().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+            .entrySet().stream().map(entry -> new Throw(entry.getKey(), entry.getValue())).toArray(Throw[]::new);
 
     private final List<Integer> playerPositions;
 
@@ -46,20 +51,11 @@ public class Day21 {
     }
 
     public long solve2() {
-        Throw[] throwOptions = IntStream.range(0, IntMath.pow(DIE_SIDES, ROLLS))
-                .map(i -> IntStream.range(0, ROLLS)
-                        .reduce(0, (last, exp) -> last + i / IntMath.pow(DIE_SIDES, exp) % DIE_SIDES + 1))
-                .boxed()
-                .collect(Collectors.groupingBy(
-                        Function.identity(),
-                        Collectors.counting()
-                )).entrySet().stream().map(entry -> new Throw(entry.getKey(), entry.getValue())).toArray(Throw[]::new);
-
-        long[][][][][] intState = new long[2][POSITIONS][DIRAC_MAX_SCORE][POSITIONS][DIRAC_MAX_SCORE];
+        long[][][][][] allStates = new long[2][POSITIONS][DIRAC_MAX_SCORE][POSITIONS][DIRAC_MAX_SCORE];
         int p1Position = playerPositions.get(0);
         int p2Position = playerPositions.get(1);
 
-        intState[0][p1Position][0][p2Position][0] = 1L;
+        allStates[0][p1Position][0][p2Position][0] = 1L;
 
         int[][] toCheck = new int[MAX_GAME_STATES][4];
         int[][] nextToCheck = new int[MAX_GAME_STATES][4];
@@ -71,59 +67,40 @@ public class Day21 {
 
         while (len > 0) {
             int nextLen = 0;
+            int nextPlayer = (player + 1) % 2;
 
             for (int i = 0; i < len; i++) {
                 int[] state = toCheck[i];
-                long worlds = intState[player][state[0]][state[1]][state[2]][state[3]];
+                long worlds = allStates[player][state[0]][state[1]][state[2]][state[3]];
                 if (worlds == 0L) {
                     continue;
                 }
 
-                intState[player][state[0]][state[1]][state[2]][state[3]] = 0;
+                allStates[player][state[0]][state[1]][state[2]][state[3]] = 0;
 
-                if (player == 0) {
-                    for (Throw option : throwOptions) {
-                        int position = (state[0] + option.value) % 10;
-                        int score = state[1] + position + 1;
+                for (Throw option : THROW_OPTIONS) {
+                    int position = (state[0] + option.value) % 10;
+                    int score = state[1] + position + 1;
 
-                        if (score >= DIRAC_MAX_SCORE) {
-                            playerWins[player] += worlds * option.multiplier;
-                            continue;
-                        }
-
-                        intState[1][position][score][state[2]][state[3]] += worlds * option.multiplier;
-
-                        nextToCheck[nextLen][0] = position;
-                        nextToCheck[nextLen][1] = score;
-                        nextToCheck[nextLen][2] = state[2];
-                        nextToCheck[nextLen][3] = state[3];
-                        nextLen++;
+                    if (score >= DIRAC_MAX_SCORE) {
+                        playerWins[player] += worlds * option.multiplier;
+                        continue;
                     }
-                } else {
-                    for (Throw option : throwOptions) {
-                        int position = (state[2] + option.value) % 10;
-                        int score = state[3] + position + 1;
 
-                        if (score >= DIRAC_MAX_SCORE) {
-                            playerWins[player] += worlds * option.multiplier;
-                            continue;
-                        }
+                    allStates[nextPlayer][state[2]][state[3]][position][score] += worlds * option.multiplier;
 
-                        intState[0][state[0]][state[1]][position][score] += worlds * option.multiplier;
-
-                        nextToCheck[nextLen][0] = state[0];
-                        nextToCheck[nextLen][1] = state[1];
-                        nextToCheck[nextLen][2] = position;
-                        nextToCheck[nextLen][3] = score;
-                        nextLen++;
-                    }
+                    nextToCheck[nextLen][0] = state[2];
+                    nextToCheck[nextLen][1] = state[3];
+                    nextToCheck[nextLen][2] = position;
+                    nextToCheck[nextLen][3] = score;
+                    nextLen++;
                 }
             }
             len = nextLen;
             int[][] temp = toCheck;
             toCheck = nextToCheck;
             nextToCheck = temp;
-            player = (player + 1) % 2;
+            player = nextPlayer;
         }
 
         return Math.max(playerWins[0], playerWins[1]);
