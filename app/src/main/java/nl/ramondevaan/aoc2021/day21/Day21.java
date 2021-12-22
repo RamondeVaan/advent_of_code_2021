@@ -17,11 +17,11 @@ public class Day21 {
     private final static int MAX_GAME_STATES = POSITIONS * POSITIONS * DIRAC_MAX_SCORE * DIRAC_MAX_SCORE;
     private final static int DIE_SIDES = 3;
     private final static int ROLLS = 3;
-    private final static Throw[] THROW_OPTIONS = IntStream.range(0, IntMath.pow(DIE_SIDES, ROLLS))
+    private final static List<Throw> THROW_OPTIONS = IntStream.range(0, IntMath.pow(DIE_SIDES, ROLLS))
             .map(i -> IntStream.range(0, ROLLS)
                     .reduce(0, (last, exp) -> last + i / IntMath.pow(DIE_SIDES, exp) % DIE_SIDES + 1))
             .boxed().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-            .entrySet().stream().map(entry -> new Throw(entry.getKey(), entry.getValue())).toArray(Throw[]::new);
+            .entrySet().stream().map(entry -> new Throw(entry.getKey(), entry.getValue())).toList();
 
     private final List<Integer> playerPositions;
 
