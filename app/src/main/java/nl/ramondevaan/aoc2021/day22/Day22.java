@@ -27,17 +27,17 @@ public class Day22 {
     private static long solve(Stream<Step> steps) {
         List<Cuboid> on = new ArrayList<>();
 
-        steps.forEach(newStep -> {
+        steps.forEach(step -> {
             ListIterator<Cuboid> iterator = on.listIterator();
             while (iterator.hasNext()) {
                 Cuboid currentCuboid = iterator.next();
-                currentCuboid.overlap(newStep.cuboid()).ifPresent(overlap -> {
+                currentCuboid.overlap(step.cuboid()).ifPresent(overlap -> {
                     iterator.remove();
                     currentCuboid.without(overlap).forEach(iterator::add);
                 });
             }
-            if (newStep.on()) {
-                on.add(newStep.cuboid());
+            if (step.on()) {
+                on.add(step.cuboid());
             }
         });
 
