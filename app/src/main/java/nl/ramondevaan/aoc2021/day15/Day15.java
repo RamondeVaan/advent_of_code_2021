@@ -7,7 +7,6 @@ import nl.ramondevaan.aoc2021.util.MutableIntMap;
 
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -58,7 +57,7 @@ public class Day15 {
             }
             int currentRisk = builder.valueAt(coordinate);
             coordinate.directNeighbors().filter(riskMap::contains)
-                    .filter(c -> builder.valueAt(c) == Integer.MAX_VALUE).collect(Collectors.toSet())
+                    .filter(c -> builder.valueAt(c) == Integer.MAX_VALUE)
                     .forEach(neighbor -> {
                         builder.setValueAt(neighbor, currentRisk + riskMap.valueAt(neighbor));
                         queue.add(neighbor);
