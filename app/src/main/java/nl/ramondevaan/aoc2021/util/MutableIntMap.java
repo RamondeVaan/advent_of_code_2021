@@ -108,4 +108,17 @@ public class MutableIntMap {
             Arrays.fill(this.map[row], value);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MutableIntMap intMap = (MutableIntMap) o;
+        return Arrays.deepEquals(map, intMap.map);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.deepHashCode(map);
+    }
 }
