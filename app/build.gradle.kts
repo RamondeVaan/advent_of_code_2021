@@ -32,6 +32,7 @@ dependencies {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    maxHeapSize = "4096m"
 }
 
 java {
