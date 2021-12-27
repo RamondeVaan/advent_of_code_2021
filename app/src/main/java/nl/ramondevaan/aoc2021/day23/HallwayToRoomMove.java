@@ -3,15 +3,7 @@ package nl.ramondevaan.aoc2021.day23;
 import java.util.ArrayList;
 import java.util.List;
 
-public record HallwayToRoomMove(int hallwayIndex, int roomIndex) implements Move {
-
-    @Override
-    public int cost(Burrow burrow) {
-        Amphipod amphipod = burrow.getHallway().get(hallwayIndex);
-        Room room = burrow.getRooms().get(roomIndex);
-        int distance = room.getSize() - room.numberOfOccupants() + Math.abs(room.getX() - hallwayIndex);
-        return distance * amphipod.energyCost();
-    }
+public record HallwayToRoomMove(int hallwayIndex, int roomIndex, long cost) implements Move {
 
     @Override
     public Burrow apply(Burrow burrow) {
