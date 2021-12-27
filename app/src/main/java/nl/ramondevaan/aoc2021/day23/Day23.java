@@ -39,33 +39,28 @@ public class Day23 {
     }
 
     private static long solve(Burrow burrow) {
-        Map<Burrow, List<? extends Move>> burrowMoves = new HashMap<>();
-        burrowMoves.put(burrow, getMoves(burrow));
         Map<Burrow, Long> lowestCost = new HashMap<>();
         lowestCost.put(burrow, 0L);
         PriorityQueue<Entry> queue = new PriorityQueue<>(Comparator.comparingLong(Entry::lowerBoundFinalCost));
-        queue.add(new Entry(burrow, 0L));
+        queue.add(new Entry(burrow, 0L,0L));
 
         Entry entry;
         while ((entry = queue.poll()) != null) {
+            if (entry.cost > lowestCost.get(entry.burrow)) {
+                continue;
+            }
             if (entry.burrow.isValid()) {
                 return entry.lowerBoundFinalCost;
             }
 
-            long cost = lowestCost.get(entry.burrow);
-            List<? extends Move> moves = burrowMoves.get(entry.burrow);
+            List<Move> moves = getMoves(entry.burrow);
 
             for (Move move : moves) {
                 Burrow newBurrow = move.burrow();
-                long newCost = cost + move.cost();
-                Long currentCost = lowestCost.get(newBurrow);
-                if (currentCost == null) {
+                long newCost = entry.cost + move.cost();
+                if (newCost < lowestCost.getOrDefault(newBurrow, Long.MAX_VALUE)) {
                     lowestCost.put(newBurrow, newCost);
-                    queue.add(new Entry(newBurrow, newCost + remainingCostLowerBound(newBurrow)));
-                    burrowMoves.put(newBurrow, getMoves(newBurrow));
-                } else if (newCost < currentCost) {
-                    lowestCost.put(newBurrow, newCost);
-                    queue.add(new Entry(newBurrow, newCost + remainingCostLowerBound(newBurrow)));
+                    queue.add(new Entry(newBurrow, newCost, newCost + remainingCostLowerBound(newBurrow)));
                 }
             }
         }
@@ -74,12 +69,12 @@ public class Day23 {
     }
 
     private static long remainingCostLowerBound(Burrow burrow) {
-        // Cost of moving out of room and above target room
         long sum = 0L;
-        sum += burrow.getRooms().stream().mapToLong(room -> {
-            long roomSum = 0L;
-            int x = room.getX();
-            int min = room.getSize() - room.numberOfOccupants() + 1;
+
+        for (Room room : burrow.getRooms()) {
+            long free = room.getSize() - room.numberOfOccupants();
+            sum += (free * free + free) / 2;
+            free *= 2;
 
             boolean otherTypeEncountered = false;
             for (int depth = room.numberOfOccupants() - 1; depth >= 0; depth--) {
@@ -88,44 +83,25 @@ public class Day23 {
                     continue;
                 }
                 otherTypeEncountered = true;
-                int steps = min + depth + Math.max(Math.abs(burrow.getRooms().get(amphipod.type()).getX() - x), 2);
-                roomSum += steps * amphipod.energyCost();
+                long steps = free + 1 + 2L * depth +
+                        Math.max(Math.abs(burrow.getRooms().get(amphipod.type()).getX() - room.getX()), 2);
+                sum += steps * amphipod.energyCost();
             }
+        }
 
-            return roomSum;
-        }).sum();
-
-        // Cost of moving from hallway position to position above target room
-        sum += burrow.getLegalHallwayPositions().stream().mapToLong(hallwayIndex -> {
+        for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
             Amphipod amphipod = burrow.getHallway().get(hallwayIndex);
             if (amphipod == null) {
-                return 0L;
-            }
-            return Math.abs(hallwayIndex - burrow.getRooms().get(amphipod.type()).getX()) * amphipod.energyCost();
-        }).sum();
-
-        // Cost of moving amphipods to their target room from the space above it
-        sum += burrow.getRooms().stream().mapToLong(room -> {
-            long roomSum = 0L;
-            int min = room.getSize() - room.numberOfOccupants();
-
-            boolean otherTypeEncountered = false;
-            for (int depth = room.numberOfOccupants() - 1; depth >= 0; depth--) {
-                if (room.getOccupants().get(depth).type() == room.getType() && !otherTypeEncountered) {
-                    continue;
-                }
-                otherTypeEncountered = true;
-                int steps = min + depth;
-                roomSum += steps * room.getEnergyCost();
+                continue;
             }
 
-            return roomSum;
-        }).sum();
+            sum += Math.abs(hallwayIndex - burrow.getRooms().get(amphipod.type()).getX()) * amphipod.energyCost();
+        }
 
         return sum;
     }
 
-    private static List<? extends Move> getMoves(Burrow burrow) {
+    private static List<Move> getMoves(Burrow burrow) {
         List<Move> moves = getRoomToRoomMoves(burrow).map(List::of).orElseGet(List::of);
         moves = moves.isEmpty() ? getHallwayToRoomMoves(burrow).map(List::of).orElseGet(List::of) : moves;
         moves = moves.isEmpty() ? getRoomToHallwayMoves(burrow).toList() : moves;
@@ -209,7 +185,7 @@ public class Day23 {
                         }));
     }
 
-    private record Entry(Burrow burrow, long lowerBoundFinalCost) {
+    private record Entry(Burrow burrow, long cost, long lowerBoundFinalCost) {
 
     }
 }
