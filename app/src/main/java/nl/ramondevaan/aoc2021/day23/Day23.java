@@ -7,9 +7,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Stream;
-
-import static java.util.function.Predicate.not;
 
 public class Day23 {
 
@@ -78,7 +75,7 @@ public class Day23 {
 
             boolean otherTypeEncountered = false;
             for (int depth = room.numberOfOccupants() - 1; depth >= 0; depth--) {
-                Amphipod amphipod = room.getOccupants().get(depth);
+                Amphipod amphipod = room.getOccupant(depth);
                 if (amphipod.type() == room.getType() && !otherTypeEncountered) {
                     continue;
                 }
@@ -104,20 +101,20 @@ public class Day23 {
     private static List<Move> getMoves(Burrow burrow) {
         List<Move> moves = getRoomToRoomMoves(burrow).map(List::of).orElseGet(List::of);
         moves = moves.isEmpty() ? getHallwayToRoomMoves(burrow).map(List::of).orElseGet(List::of) : moves;
-        moves = moves.isEmpty() ? getRoomToHallwayMoves(burrow).toList() : moves;
+        moves = moves.isEmpty() ? getRoomToHallwayMoves(burrow) : moves;
 
         return moves;
     }
 
     private static Optional<Move> getRoomToRoomMoves(Burrow burrow) {
-        return burrow.getRooms().stream().flatMap(room -> {
+        for (Room room : burrow.getRooms()) {
             Amphipod amphipod = room.head();
             if (amphipod == null || amphipod.type() == room.getType()) {
-                return Stream.of();
+                continue;
             }
             Room other = burrow.getRooms().get(amphipod.type());
             if (!other.accepts(amphipod) || burrow.amphipodsBetween(room.getX(), other.getX()).findAny().isPresent()) {
-                return Stream.of();
+                continue;
             }
 
             int distance = room.getSize() - room.numberOfOccupants() + 1 +
@@ -132,21 +129,24 @@ public class Day23 {
             newRooms.set(other.getType(), newToRoom);
             Burrow newBurrow = new Burrow(burrow.getHallway().stream(), newRooms.stream());
 
-            return Stream.of(new Move(newBurrow, cost));
-        }).findAny();
+            return Optional.of(new Move(newBurrow, cost));
+        }
+
+        return Optional.empty();
     }
 
     private static Optional<Move> getHallwayToRoomMoves(Burrow burrow) {
         List<Amphipod> hallway = burrow.getHallway();
         List<Room> rooms = burrow.getRooms();
-        return burrow.getLegalHallwayPositions().stream().flatMap(hallwayIndex -> {
+
+        for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
             Amphipod amphipod = hallway.get(hallwayIndex);
             if (amphipod == null) {
-                return Stream.of();
+                continue;
             }
             Room room = rooms.get(amphipod.type());
             if (!room.accepts(amphipod) || burrow.amphipodsBetween(hallwayIndex, room.getX()).count() != 1L) {
-                return Stream.of();
+                continue;
             }
 
             int distance = room.getSize() - room.numberOfOccupants() + Math.abs(room.getX() - hallwayIndex);
@@ -159,30 +159,39 @@ public class Day23 {
             newRooms.set(room.getType(), newRoom);
             Burrow newBurrow = new Burrow(newHallway.stream(), newRooms.stream());
 
-            return Stream.of(new Move(newBurrow, cost));
-        }).findAny();
+            return Optional.of(new Move(newBurrow, cost));
+        }
+
+        return Optional.empty();
     }
 
-    private static Stream<Move> getRoomToHallwayMoves(Burrow burrow) {
-        return burrow.getRooms().stream().filter(not(Room::allOccupantsSameAsOwner))
-                .flatMap(room -> burrow.getLegalHallwayPositions().stream()
-                        .filter(hallwayIndex -> burrow.amphipodsBetween(room.getX(), hallwayIndex).findAny().isEmpty())
-                        .map(hallwayIndex -> {
-                            Amphipod amphipod = room.head();
-                            int distance = room.getSize() - room.numberOfOccupants() + 1
-                                    + Math.abs(room.getX() - hallwayIndex);
-                            long cost = distance * amphipod.energyCost();
+    private static List<Move> getRoomToHallwayMoves(Burrow burrow) {
+        List<Move> ret = new ArrayList<>();
 
+        for (Room room : burrow.getRooms()) {
+            Amphipod amphipod = room.head();
+            if (room.allOccupantsSameAsOwner() || amphipod == null) {
+                continue;
+            }
+            for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
+                if (burrow.amphipodsBetween(room.getX(), hallwayIndex).findAny().isPresent()) {
+                    continue;
+                }
+                int distance = room.getSize() - room.numberOfOccupants() + 1 + Math.abs(room.getX() - hallwayIndex);
+                long cost = distance * amphipod.energyCost();
 
-                            List<Room> newRooms = new ArrayList<>(burrow.getRooms());
-                            Room newRoom = room.pop();
-                            newRooms.set(room.getType(), newRoom);
-                            List<Amphipod> newHallway = new ArrayList<>(burrow.getHallway());
-                            newHallway.set(hallwayIndex, amphipod);
-                            Burrow newBurrow = new Burrow(newHallway.stream(), newRooms.stream());
+                List<Room> newRooms = new ArrayList<>(burrow.getRooms());
+                Room newRoom = room.pop();
+                newRooms.set(room.getType(), newRoom);
+                List<Amphipod> newHallway = new ArrayList<>(burrow.getHallway());
+                newHallway.set(hallwayIndex, amphipod);
+                Burrow newBurrow = new Burrow(newHallway.stream(), newRooms.stream());
 
-                            return new Move(newBurrow, cost);
-                        }));
+                ret.add(new Move(newBurrow, cost));
+            }
+        }
+
+        return Collections.unmodifiableList(ret);
     }
 
     private record Entry(Burrow burrow, long cost, long lowerBoundFinalCost) {

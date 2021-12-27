@@ -1,43 +1,43 @@
 package nl.ramondevaan.aoc2021.day23;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 public class Room {
     private final int type;
-    private final long energyCost;
-    private final List<Amphipod> occupants;
+    private final Amphipod[] occupants;
     private final int size;
     private final int x;
 
-    public Room(int type, long energyCost, Stream<Amphipod> stream, int size, int x) {
+    public Room(int type, Stream<Amphipod> stream, int size, int x) {
         this.type = type;
-        this.energyCost = energyCost;
-        this.occupants = stream.toList();
+        this.occupants = stream.toArray(Amphipod[]::new);
+        this.size = size;
+        this.x = x;
+    }
+
+    private Room(int type, Amphipod[] occupants, int size, int x) {
+        this.type = type;
+        this.occupants = occupants;
         this.size = size;
         this.x = x;
     }
 
     public boolean accepts(Amphipod toCheck) {
-        return toCheck.type() == this.type && occupants.size() != size &&
-                occupants.stream().noneMatch(amphipod -> amphipod.type() != type);
+        return toCheck.type() == this.type && occupants.length != size && allOccupantsSameAsOwner();
     }
 
     public int numberOfOccupants() {
-        return occupants.size();
+        return occupants.length;
     }
 
-    public List<Amphipod> getOccupants() {
-        return occupants;
+    public Amphipod getOccupant(int index) {
+        return occupants[index];
     }
 
     public int getType() {
         return type;
-    }
-
-    public long getEnergyCost() {
-        return energyCost;
     }
 
     public int getX() {
@@ -49,23 +49,34 @@ public class Room {
     }
 
     public Amphipod head() {
-        return occupants.stream().findFirst().orElse(null);
+        return occupants.length > 0 ? occupants[0] : null;
     }
 
     public Room pop() {
-        return new Room(type, energyCost, occupants.stream().skip(1), size, x);
+        Amphipod[] newOccupants = new Amphipod[occupants.length - 1];
+        System.arraycopy(occupants, 1, newOccupants, 0, newOccupants.length);
+        return new Room(type, newOccupants, size, x);
     }
 
     public Room push(Amphipod amphipod) {
-        return new Room(type, energyCost, Stream.concat(Stream.of(amphipod), occupants.stream()), size, x);
+        Amphipod[] newOccupants = new Amphipod[occupants.length + 1];
+        System.arraycopy(occupants, 0, newOccupants, 1, occupants.length);
+        newOccupants[0] = amphipod;
+        return new Room(type, newOccupants, size, x);
     }
 
     public boolean isValid() {
-        return occupants.size() == size && allOccupantsSameAsOwner();
+        return occupants.length == size && allOccupantsSameAsOwner();
     }
 
     public boolean allOccupantsSameAsOwner() {
-        return occupants.stream().allMatch(amphipod -> amphipod.type() == type);
+        for (Amphipod amphipod : occupants) {
+            if (amphipod.type() != type) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -73,12 +84,11 @@ public class Room {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Room room = (Room) o;
-        return type == room.type && energyCost == room.energyCost && size == room.size && x == room.x && occupants.equals(
-                room.occupants);
+        return type == room.type && size == room.size && x == room.x && Arrays.equals(occupants, room.occupants);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, energyCost, occupants, size, x);
+        return Objects.hash(type, Arrays.hashCode(occupants), size, x);
     }
 }

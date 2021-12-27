@@ -25,10 +25,8 @@ public class BurrowParser implements Parser<List<String>, Burrow> {
         Matcher matcher = ROOM_PATTERN.matcher(toParse.get(2));
         while (matcher.find()) {
             int x = matcher.start();
-            int type = index++;
             rooms.add(new Room(
-                    type,
-                    getEnergyCost(type),
+                    index++,
                     roomLines.stream().map(line -> parseAmphipod(line.charAt(x))),
                     roomLines.size(),
                     x - 1
