@@ -112,8 +112,11 @@ public class Day23 {
 
     private static Optional<Move> getRoomToRoomMoves(Burrow burrow) {
         for (int roomIndex = 0; roomIndex < burrow.getNumberOfRooms(); roomIndex++) {
+            if (burrow.getRoomFreeSpots(roomIndex) == burrow.getRoomSize()) {
+                continue;
+            }
             int amphipod = burrow.getRoomHead(roomIndex);
-            if (amphipod < 0 || amphipod == roomIndex) {
+            if (amphipod == roomIndex) {
                 continue;
             }
             if (!burrow.roomReady(amphipod) ||
@@ -142,10 +145,7 @@ public class Day23 {
     private static Optional<Move> getHallwayToRoomMoves(Burrow burrow) {
         for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
             int amphipod = burrow.getHallwayValue(hallwayIndex);
-            if (amphipod < 0) {
-                continue;
-            }
-            if (!burrow.roomReady(amphipod) ||
+            if (amphipod < 0 || !burrow.roomReady(amphipod) ||
                     burrow.amphipodsBetween(hallwayIndex, burrow.getRoomX(amphipod)).count() != 1L) {
                 continue;
             }
@@ -168,10 +168,10 @@ public class Day23 {
         List<Move> ret = new ArrayList<>();
 
         for (int roomIndex = 0; roomIndex < burrow.getNumberOfRooms(); roomIndex++) {
-            int amphipod = burrow.getRoomHead(roomIndex);
-            if (amphipod < 0 || burrow.roomReady(roomIndex)) {
+            if (burrow.getRoomFreeSpots(roomIndex) == burrow.getRoomSize() || burrow.roomReady(roomIndex)) {
                 continue;
             }
+            int amphipod = burrow.getRoomHead(roomIndex);
             for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
                 if (burrow.amphipodsBetween(burrow.getRoomX(roomIndex), hallwayIndex).findAny().isPresent()) {
                     continue;
