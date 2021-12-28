@@ -39,7 +39,7 @@ public class Day23 {
         Map<Burrow, Long> lowestCost = new HashMap<>();
         lowestCost.put(burrow, 0L);
         PriorityQueue<Entry> queue = new PriorityQueue<>(Comparator.comparingLong(Entry::lowerBoundFinalCost));
-        queue.add(new Entry(burrow, 0L,0L));
+        queue.add(new Entry(burrow, 0L, 0L));
 
         Entry entry;
         while ((entry = queue.poll()) != null) {
@@ -122,12 +122,10 @@ public class Day23 {
                     other.getSize() - other.numberOfOccupants();
             long cost = distance * amphipod.energyCost();
 
-            List<Room> newRooms = new ArrayList<>(burrow.getRooms());
-            Room newFromRoom = room.pop();
-            Room newToRoom = other.push(amphipod);
-            newRooms.set(room.getType(), newFromRoom);
-            newRooms.set(other.getType(), newToRoom);
-            Burrow newBurrow = new Burrow(burrow.getHallway().stream(), newRooms.stream());
+            Burrow newBurrow = burrow.builder()
+                    .setRoom(room.getType(), room.pop())
+                    .setRoom(other.getType(), other.push(amphipod))
+                    .build();
 
             return Optional.of(new Move(newBurrow, cost));
         }
@@ -152,12 +150,10 @@ public class Day23 {
             int distance = room.getSize() - room.numberOfOccupants() + Math.abs(room.getX() - hallwayIndex);
             long cost = distance * amphipod.energyCost();
 
-            List<Amphipod> newHallway = new ArrayList<>(burrow.getHallway());
-            newHallway.set(hallwayIndex, null);
-            List<Room> newRooms = new ArrayList<>(burrow.getRooms());
-            Room newRoom = room.push(amphipod);
-            newRooms.set(room.getType(), newRoom);
-            Burrow newBurrow = new Burrow(newHallway.stream(), newRooms.stream());
+            Burrow newBurrow = burrow.builder()
+                    .setHallway(hallwayIndex, null)
+                    .setRoom(room.getType(), room.push(amphipod))
+                    .build();
 
             return Optional.of(new Move(newBurrow, cost));
         }
@@ -180,12 +176,10 @@ public class Day23 {
                 int distance = room.getSize() - room.numberOfOccupants() + 1 + Math.abs(room.getX() - hallwayIndex);
                 long cost = distance * amphipod.energyCost();
 
-                List<Room> newRooms = new ArrayList<>(burrow.getRooms());
-                Room newRoom = room.pop();
-                newRooms.set(room.getType(), newRoom);
-                List<Amphipod> newHallway = new ArrayList<>(burrow.getHallway());
-                newHallway.set(hallwayIndex, amphipod);
-                Burrow newBurrow = new Burrow(newHallway.stream(), newRooms.stream());
+                Burrow newBurrow = burrow.builder()
+                        .setHallway(hallwayIndex, amphipod)
+                        .setRoom(room.getType(), room.pop())
+                        .build();
 
                 ret.add(new Move(newBurrow, cost));
             }
