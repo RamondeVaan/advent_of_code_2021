@@ -68,10 +68,6 @@ public class Room {
         return new Room(type, energyCost, newOccupants, size, x);
     }
 
-    public boolean isValid() {
-        return occupants.length == size && allOccupantsSameAsOwner();
-    }
-
     public boolean allOccupantsSameAsOwner() {
         for (Amphipod amphipod : occupants) {
             if (amphipod.type() != type) {

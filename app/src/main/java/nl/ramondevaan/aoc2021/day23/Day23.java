@@ -39,14 +39,14 @@ public class Day23 {
         Map<Burrow, Long> lowestCost = new HashMap<>();
         lowestCost.put(burrow, 0L);
         PriorityQueue<Entry> queue = new PriorityQueue<>(Comparator.comparingLong(Entry::lowerBoundFinalCost));
-        queue.add(new Entry(burrow, 0L, 0L));
+        queue.add(new Entry(burrow, 0L, 1L));
 
         Entry entry;
         while ((entry = queue.poll()) != null) {
             if (entry.cost > lowestCost.get(entry.burrow)) {
                 continue;
             }
-            if (entry.burrow.isValid()) {
+            if (entry.cost == entry.lowerBoundFinalCost) {
                 return entry.lowerBoundFinalCost;
             }
 

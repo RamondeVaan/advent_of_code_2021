@@ -47,10 +47,6 @@ public class Burrow {
         return rooms;
     }
 
-    public boolean isValid() {
-        return hallway.stream().allMatch(Objects::isNull) && rooms.stream().allMatch(Room::isValid);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
