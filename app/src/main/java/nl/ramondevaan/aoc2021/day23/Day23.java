@@ -125,7 +125,8 @@ public class Day23 {
                 continue;
             }
             Room other = burrow.getRooms().get(amphipod.type());
-            if (!other.accepts(amphipod) || burrow.amphipodsBetween(room.getX(), other.getX()).findAny().isPresent()) {
+            if (!other.allOccupantsSameAsOwner() ||
+                    burrow.amphipodsBetween(room.getX(), other.getX()).findAny().isPresent()) {
                 continue;
             }
 
@@ -155,7 +156,7 @@ public class Day23 {
                 continue;
             }
             Room room = rooms.get(amphipod.type());
-            if (!room.accepts(amphipod) || burrow.amphipodsBetween(hallwayIndex, room.getX()).count() != 1L) {
+            if (!room.allOccupantsSameAsOwner() || burrow.amphipodsBetween(hallwayIndex, room.getX()).count() != 1L) {
                 continue;
             }
 

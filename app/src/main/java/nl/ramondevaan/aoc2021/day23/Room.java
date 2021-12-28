@@ -27,10 +27,6 @@ public class Room {
         this.x = x;
     }
 
-    public boolean accepts(Amphipod toCheck) {
-        return toCheck.type() == this.type && occupants.length != size && allOccupantsSameAsOwner();
-    }
-
     public int numberOfOccupants() {
         return occupants.length;
     }
