@@ -1,13 +1,12 @@
 package nl.ramondevaan.aoc2021.day23;
 
-import com.google.common.math.LongMath;
 import nl.ramondevaan.aoc2021.util.Parser;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 public class BurrowParser implements Parser<List<String>, Burrow> {
 
@@ -15,43 +14,30 @@ public class BurrowParser implements Parser<List<String>, Burrow> {
 
     @Override
     public Burrow parse(List<String> toParse) {
-        Stream<Amphipod> amphipods = toParse.get(1).chars()
-                .filter(character -> Character.isAlphabetic(character) || character == '.')
-                .mapToObj(this::parseAmphipodOrNull);
+        IntStream amphipods = toParse.get(1).substring(1, toParse.get(1).length() - 1).chars()
+                .map(i -> i == '.' ? '@' : i)
+                .map(this::parseAmphipod);
 
+        int max = Integer.MIN_VALUE;
         List<String> roomLines = toParse.subList(2, toParse.size() - 1);
         int index = 0;
         List<Room> rooms = new ArrayList<>();
         Matcher matcher = ROOM_PATTERN.matcher(toParse.get(2));
         while (matcher.find()) {
             int x = matcher.start();
-            int type = index++;
+            List<Integer> roomAmphipods = roomLines.stream().map(line -> parseAmphipod(line.charAt(x))).toList();
+            max = Math.max(max, roomAmphipods.stream().mapToInt(Integer::intValue).max().orElse(Integer.MIN_VALUE));
             rooms.add(new Room(
-                    type,
-                    getEnergyCost(type),
-                    roomLines.stream().map(line -> parseAmphipod(line.charAt(x))),
-                    roomLines.size(),
+                    index++,
+                    roomAmphipods.stream().mapToInt(Integer::intValue),
                     x - 1
             ));
         }
 
-        return new Burrow(amphipods, rooms.stream());
+        return new Burrow(amphipods, rooms.stream(), max, roomLines.size());
     }
 
-    private Amphipod parseAmphipodOrNull(int character) {
-        if (character == '.') {
-            return null;
-        }
-
-        return parseAmphipod(character);
-    }
-
-    private Amphipod parseAmphipod(int character) {
-        int type = character - 'A';
-        return new Amphipod(type, getEnergyCost(type));
-    }
-
-    private long getEnergyCost(int type) {
-        return LongMath.pow(10L, type);
+    private int parseAmphipod(int character) {
+        return character - 'A';
     }
 }
