@@ -6,19 +6,22 @@ import java.util.stream.Stream;
 
 public class Room {
     private final int type;
+    private final long energyCost;
     private final Amphipod[] occupants;
     private final int size;
     private final int x;
 
-    public Room(int type, Stream<Amphipod> stream, int size, int x) {
+    public Room(int type, long energyCost, Stream<Amphipod> stream, int size, int x) {
         this.type = type;
+        this.energyCost = energyCost;
         this.occupants = stream.toArray(Amphipod[]::new);
         this.size = size;
         this.x = x;
     }
 
-    private Room(int type, Amphipod[] occupants, int size, int x) {
+    public Room(int type, long energyCost, Amphipod[] occupants, int size, int x) {
         this.type = type;
+        this.energyCost = energyCost;
         this.occupants = occupants;
         this.size = size;
         this.x = x;
@@ -40,6 +43,10 @@ public class Room {
         return type;
     }
 
+    public long getEnergyCost() {
+        return energyCost;
+    }
+
     public int getX() {
         return x;
     }
@@ -55,14 +62,14 @@ public class Room {
     public Room pop() {
         Amphipod[] newOccupants = new Amphipod[occupants.length - 1];
         System.arraycopy(occupants, 1, newOccupants, 0, newOccupants.length);
-        return new Room(type, newOccupants, size, x);
+        return new Room(type, energyCost, newOccupants, size, x);
     }
 
     public Room push(Amphipod amphipod) {
         Amphipod[] newOccupants = new Amphipod[occupants.length + 1];
         System.arraycopy(occupants, 0, newOccupants, 1, occupants.length);
         newOccupants[0] = amphipod;
-        return new Room(type, newOccupants, size, x);
+        return new Room(type, energyCost, newOccupants, size, x);
     }
 
     public boolean isValid() {
