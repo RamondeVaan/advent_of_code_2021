@@ -67,6 +67,8 @@ public class Day23 {
 
     private static long remainingCostLowerBound(Burrow burrow) {
         long sum = 0L;
+        int[] x = burrow.getRooms().stream().mapToInt(Room::getX).toArray();
+        int[] numberOfMissingAmphipods = new int[burrow.getRooms().size()];
 
         for (Room room : burrow.getRooms()) {
             int min = room.getSize() - room.numberOfOccupants() + 1;
@@ -78,6 +80,7 @@ public class Day23 {
                     continue;
                 }
                 otherTypeEncountered = true;
+                numberOfMissingAmphipods[amphipod.type()]++;
                 int steps = min + depth +
                         Math.max(Math.abs(burrow.getRooms().get(amphipod.type()).getX() - room.getX()), 2);
                 sum += steps * amphipod.energyCost();
@@ -89,22 +92,14 @@ public class Day23 {
             if (amphipod == null) {
                 continue;
             }
+            numberOfMissingAmphipods[amphipod.type()]++;
 
             sum += Math.abs(hallwayIndex - burrow.getRooms().get(amphipod.type()).getX()) * amphipod.energyCost();
         }
 
         for (Room room : burrow.getRooms()) {
-            long fillToDepth = room.getSize() - room.numberOfOccupants();
-
-            for (int depth = room.numberOfOccupants() - 1; depth >= 0; depth--) {
-                Amphipod amphipod = room.getOccupant(depth);
-                if (amphipod == null || amphipod.type() != room.getType()) {
-                    fillToDepth += depth;
-                    break;
-                }
-            }
-
-            sum += ((fillToDepth * fillToDepth + fillToDepth) / 2) * room.getEnergyCost();
+            long missing = numberOfMissingAmphipods[room.getType()];
+            sum += missing * (missing + 1) / 2 * room.getEnergyCost();
         }
 
         return sum;
