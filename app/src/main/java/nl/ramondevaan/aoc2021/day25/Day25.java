@@ -40,20 +40,24 @@ public class Day25 {
     }
 
     private static void moveEast(MutableIntMap in, MutableIntMap out) {
-        in.keys().filter(coordinate -> in.valueAt(coordinate) == EAST).forEach(coordinate -> {
-            Coordinate next = new Coordinate(coordinate.row(), (coordinate.column() + 1) % in.columns());
-            out.setValueAt(in.valueAt(next) == 0 ? next : coordinate, EAST);
-        });
+        for (Coordinate coordinate : in.keys()) {
+            if (in.valueAt(coordinate) == EAST) {
+                Coordinate next = new Coordinate(coordinate.row(), (coordinate.column() + 1) % in.columns());
+                out.setValueAt(in.valueAt(next) == 0 ? next : coordinate, EAST);
+            }
+        }
     }
 
     private static void moveSouth(MutableIntMap in, MutableIntMap out) {
-        in.keys().filter(coordinate -> in.valueAt(coordinate) == SOUTH).forEach(coordinate -> {
-            Coordinate next = new Coordinate((coordinate.row() + 1) % in.rows(), coordinate.column());
-            if (in.valueAt(next) == SOUTH || out.valueAt(next) == EAST) {
-                out.setValueAt(coordinate, SOUTH);
-            } else {
-                out.setValueAt(next, SOUTH);
+        for (Coordinate coordinate : in.keys()) {
+            if (in.valueAt(coordinate) == SOUTH) {
+                Coordinate next = new Coordinate((coordinate.row() + 1) % in.rows(), coordinate.column());
+                if (in.valueAt(next) == SOUTH || out.valueAt(next) == EAST) {
+                    out.setValueAt(coordinate, SOUTH);
+                } else {
+                    out.setValueAt(next, SOUTH);
+                }
             }
-        });
+        }
     }
 }

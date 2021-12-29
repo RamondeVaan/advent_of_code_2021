@@ -5,8 +5,7 @@ import nl.ramondevaan.aoc2021.util.IntMap;
 import nl.ramondevaan.aoc2021.util.IntMapParser;
 import nl.ramondevaan.aoc2021.util.MutableIntMap;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -47,8 +46,14 @@ public class Day11 {
         grid.computeAll((value) -> value + 1);
 
         boolean[][] flashed = new boolean[grid.rows()][grid.columns()];
-        Set<Coordinate> toFlash = grid.keys().filter(coordinate -> grid.valueAt(coordinate) >= 10)
-                .collect(Collectors.toUnmodifiableSet());
+
+        Set<Coordinate> toFlash = new HashSet<>();
+        for (Coordinate coordinate : grid.keys()) {
+            if (grid.valueAt(coordinate) >= 10) {
+                toFlash.add(coordinate);
+            }
+        }
+        toFlash = Collections.unmodifiableSet(toFlash);
 
         while (!toFlash.isEmpty()) {
             toFlash.forEach(coordinate -> flashed[coordinate.row()][coordinate.column()] = true);

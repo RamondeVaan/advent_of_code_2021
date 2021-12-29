@@ -1,11 +1,9 @@
 package nl.ramondevaan.aoc2021.util;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Iterator;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class MutableIntMap {
 
@@ -13,7 +11,6 @@ public class MutableIntMap {
     private final int rows;
     private final int columns;
     private final int size;
-    private final List<Coordinate> keys;
 
     public MutableIntMap(IntMap map) {
         this(map.rows(), map.columns());
@@ -27,27 +24,18 @@ public class MutableIntMap {
         this.rows = rows;
         this.columns = columns;
         this.size = rows * columns;
-        this.keys = new ArrayList<>();
-        for (int row = 0; row < rows; row++) {
-            for (int column = 0; column < columns; column++) {
-                this.keys.add(new Coordinate(row, column));
-            }
-        }
     }
 
-    public Stream<Coordinate> keys() {
-        return keys.stream();
+    public Iterable<Coordinate> keys() {
+        return IntMapKeyIterator::new;
     }
 
     public IntStream values() {
         return IntStream.range(0, rows).flatMap(row -> Arrays.stream(this.map[row], 0, columns));
     }
 
-    public Stream<IntMapEntry> entries() {
-        return this.keys.stream().map(coordinate -> new IntMapEntry(
-                coordinate,
-                this.map[coordinate.row()][coordinate.column()]
-        ));
+    public Iterable<IntMapEntry> entries() {
+        return IntMapEntryIterator::new;
     }
 
     public void computeIfPresent(Coordinate coordinate, IntUnaryOperator operator) {
@@ -120,5 +108,45 @@ public class MutableIntMap {
     @Override
     public int hashCode() {
         return Arrays.deepHashCode(map);
+    }
+
+    private class IntMapKeyIterator implements Iterator<Coordinate> {
+        private int nextRow = 0;
+        private int nextColumn = 0;
+
+        @Override
+        public boolean hasNext() {
+            return nextRow < rows;
+        }
+
+        @Override
+        public Coordinate next() {
+            Coordinate ret = Coordinate.of(nextRow, nextColumn);
+            if (++nextColumn >= columns) {
+                nextColumn = 0;
+                nextRow++;
+            }
+            return ret;
+        }
+    }
+
+    private class IntMapEntryIterator implements Iterator<IntMapEntry> {
+        private int nextRow = 0;
+        private int nextColumn = 0;
+
+        @Override
+        public boolean hasNext() {
+            return nextRow < rows;
+        }
+
+        @Override
+        public IntMapEntry next() {
+            IntMapEntry ret = new IntMapEntry(Coordinate.of(nextRow, nextColumn), map[nextRow][nextColumn]);
+            if (++nextColumn >= columns) {
+                nextColumn = 0;
+                nextRow++;
+            }
+            return ret;
+        }
     }
 }
