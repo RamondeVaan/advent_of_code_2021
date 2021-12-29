@@ -118,7 +118,7 @@ public class Day23 {
                 continue;
             }
             TargetRoomPosition target = burrow.getTargetPosition(roomPosition.value());
-            if (target == null || burrow.amphipodsBetween(roomPosition.x(), target.x()).findAny().isPresent()) {
+            if (target == null || burrow.amphipodsBetween(roomPosition.x(), target.x()) > 0) {
                 continue;
             }
 
@@ -143,7 +143,7 @@ public class Day23 {
                 continue;
             }
             TargetRoomPosition target = burrow.getTargetPosition(amphipod);
-            if (target == null || burrow.amphipodsBetween(hallwayIndex, target.x()).count() != 1L) {
+            if (target == null || burrow.amphipodsBetween(hallwayIndex, target.x()) != 1) {
                 continue;
             }
 
@@ -170,7 +170,7 @@ public class Day23 {
                 continue;
             }
             for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
-                if (burrow.amphipodsBetween(roomPosition.x(), hallwayIndex).findAny().isPresent()) {
+                if (burrow.amphipodsBetween(roomPosition.x(), hallwayIndex) > 0) {
                     continue;
                 }
                 int distance = roomPosition.depth() + 1 + Math.abs(roomPosition.x() - hallwayIndex);

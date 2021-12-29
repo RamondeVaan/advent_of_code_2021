@@ -40,10 +40,19 @@ public class Burrow {
         this.roomSize = roomSize;
     }
 
-    public IntStream amphipodsBetween(int from, int to) {
+    public int amphipodsBetween(int from, int to) {
         int min = Math.min(from, to);
         int max = Math.max(from, to);
-        return Arrays.stream(values).skip(min).limit(max - min + 1).filter(i -> i >= 0);
+
+        int count = 0;
+
+        for (int i = min; i <= max; i++) {
+            if (values[i] >= 0) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     public long getEnergyCost(int amphipod) {
