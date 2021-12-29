@@ -14,7 +14,6 @@ import static java.util.function.Predicate.not;
 public class Burrow {
     private final int[] values;
     private final int[] roomPositions;
-    private final int[] numberOfFreeSpots;
     private final int hallwaySize;
     private final int roomSize;
     private final List<Integer> legalHallwayPositions;
@@ -30,33 +29,22 @@ public class Burrow {
         this.roomSize = roomSize;
         this.energyCost = IntStream.range(0, this.roomPositions.length)
                 .mapToLong(i -> LongMath.pow(10L, i)).toArray();
-        this.numberOfFreeSpots = new int[this.roomPositions.length];
-        for (int i = hallwaySize + 1; i < this.values.length; i++) {
-            if (this.values[i] == -1) {
-                numberOfFreeSpots[i % this.roomPositions.length]++;
-            }
-        }
     }
 
-    private Burrow(int[] values, int[] numberOfFreeSpots, int[] roomPositions, List<Integer> legalHallwayPositions,
+    private Burrow(int[] values, int[] roomPositions, List<Integer> legalHallwayPositions,
             long[] energyCost, int hallwaySize, int roomSize) {
         this.values = values;
         this.roomPositions = roomPositions;
-        this.numberOfFreeSpots = numberOfFreeSpots;
         this.legalHallwayPositions = legalHallwayPositions;
         this.energyCost = energyCost;
         this.hallwaySize = hallwaySize;
         this.roomSize = roomSize;
     }
 
-    public Stream<Integer> amphipodsBetween(int from, int to) {
+    public IntStream amphipodsBetween(int from, int to) {
         int min = Math.min(from, to);
         int max = Math.max(from, to);
-        return this.legalHallwayPositions.stream()
-                .dropWhile(i -> i < min)
-                .takeWhile(i -> i <= max)
-                .map(i -> values[i])
-                .filter(i -> i >= 0);
+        return Arrays.stream(values).skip(min).limit(max - min + 1).filter(i -> i >= 0);
     }
 
     public long getEnergyCost(int amphipod) {
@@ -87,23 +75,40 @@ public class Burrow {
         return roomSize;
     }
 
-    public int getRoomFreeSpots(int roomIndex) {
-        return numberOfFreeSpots[roomIndex];
-    }
-
-    public int getRoomHead(int roomIndex) {
-        return values[this.hallwaySize + roomIndex + numberOfFreeSpots[roomIndex] * roomPositions.length];
-    }
-
-    public boolean roomReady(int roomIndex) {
+    public RoomPosition getRoomHead(int roomIndex) {
         int base = hallwaySize + roomIndex;
-        for (int i = base; i < values.length; i += roomPositions.length) {
-            if (values[i] != -1 && values[i] != roomIndex) {
-                return false;
+        int depth = 0;
+        RoomPosition head = null;
+        for (; depth < roomSize; depth++) {
+            int index = base + depth * roomPositions.length;
+            if (values[index] != -1) {
+                head = new RoomPosition(index, roomPositions[roomIndex], depth, values[index]);
+                break;
+            }
+        }
+        for (; depth < roomSize; depth++) {
+            int index = base + depth * roomPositions.length;
+            if (values[index] != roomIndex) {
+                break;
             }
         }
 
-        return true;
+        return head;
+    }
+
+    public TargetRoomPosition getTargetPosition(int roomIndex) {
+        int base = hallwaySize + roomIndex;
+        for (int depth = roomSize - 1; depth >= 0; depth--) {
+            int index = base + depth * roomPositions.length;
+            if (values[index] == -1) {
+                return new TargetRoomPosition(index, roomPositions[roomIndex], depth, energyCost[roomIndex]);
+            }
+            if (values[index] != roomIndex) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -122,54 +127,39 @@ public class Burrow {
     public Builder builder() {
         int[] newValues = new int[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
-        int[] newNumberOfFreeSpots = new int[numberOfFreeSpots.length];
-        System.arraycopy(numberOfFreeSpots, 0, newNumberOfFreeSpots, 0, numberOfFreeSpots.length);
-        return new Builder(newValues, newNumberOfFreeSpots, roomPositions,
-                           legalHallwayPositions, energyCost, hallwaySize, roomSize
-        );
+        return new Builder(newValues, roomPositions, legalHallwayPositions, energyCost, hallwaySize, roomSize);
     }
 
     public static class Builder {
         private final int[] values;
         private final int[] roomPositions;
-        private final int[] numberOfFreeSpots;
         private final int hallwaySize;
         private final int roomSize;
         private final List<Integer> legalHallwayPositions;
         private final long[] energyCost;
 
-        private Builder(int[] values, int[] numberOfFreeSpots, int[] roomPositions,
+        private Builder(int[] values, int[] roomPositions,
                 List<Integer> legalHallwayPositions, long[] energyCost, int hallwaySize, int roomSize) {
             this.values = values;
             this.roomPositions = roomPositions;
-            this.numberOfFreeSpots = numberOfFreeSpots;
             this.legalHallwayPositions = legalHallwayPositions;
             this.energyCost = energyCost;
             this.hallwaySize = hallwaySize;
             this.roomSize = roomSize;
         }
 
-        public Builder setHallway(int index, int value) {
+        public Builder setValueAt(int index, int value) {
             values[index] = value;
             return this;
         }
 
-        public Builder pushToCorrectRoom(int amphipod) {
-            numberOfFreeSpots[amphipod]--;
-            values[hallwaySize + amphipod + (numberOfFreeSpots[amphipod]) * roomPositions.length] = amphipod;
-            return this;
-        }
-
-        public Builder popRoom(int roomIndex) {
-            values[hallwaySize + roomIndex + (numberOfFreeSpots[roomIndex]) * roomPositions.length] = -1;
-            numberOfFreeSpots[roomIndex]++;
+        public Builder deleteValueAt(int index) {
+            values[index] = -1;
             return this;
         }
 
         public Burrow build() {
-            return new Burrow(values, numberOfFreeSpots, roomPositions,
-                              legalHallwayPositions, energyCost, hallwaySize, roomSize
-            );
+            return new Burrow(values, roomPositions, legalHallwayPositions, energyCost, hallwaySize, roomSize);
         }
     }
 }

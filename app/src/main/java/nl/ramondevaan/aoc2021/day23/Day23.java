@@ -67,21 +67,28 @@ public class Day23 {
 
     private static long remainingCostLowerBound(Burrow burrow) {
         long sum = 0L;
-        int[] numberOfMissingAmphipods = new int[burrow.getNumberOfRooms()];
+        int maxDepth = burrow.getRoomSize() - 1;
 
         for (int roomIndex = 0; roomIndex < burrow.getNumberOfRooms(); roomIndex++) {
-            int min = burrow.getRoomFreeSpots(roomIndex);
-            int depth = burrow.getRoomSize() - 1;
-            while (depth >= min && burrow.getRoomOccupant(roomIndex, depth) == roomIndex) {
+            int depth = maxDepth;
+            int roomX = burrow.getRoomX(roomIndex);
+            long roomEnergyCost = burrow.getEnergyCost(roomIndex);
+            while (depth >= 0 && burrow.getRoomOccupant(roomIndex, depth) == roomIndex) {
                 depth--;
             }
 
-            for (; depth >= min; depth--) {
+            for (; depth >= 0; depth--) {
                 int type = burrow.getRoomOccupant(roomIndex, depth);
-                numberOfMissingAmphipods[type]++;
-                int steps = depth + 1 + Math.max(Math.abs(burrow.getRoomX(type) - burrow.getRoomX(roomIndex)), 2);
-                sum += steps * burrow.getEnergyCost(type);
+                if (type == -1) {
+                    break;
+                }
+                int steps = depth + 1 + Math.max(Math.abs(burrow.getRoomX(type) - roomX), 2);
+                sum += steps * burrow.getEnergyCost(type); // Move out incorrectly placed amphipod
+                sum += (depth + 1) * roomEnergyCost; // Move in correct amphipod
             }
+
+            long freeSpaces = depth + 1;
+            sum += freeSpaces * (freeSpaces + 1) / 2 * roomEnergyCost;
         }
 
         for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
@@ -89,14 +96,8 @@ public class Day23 {
             if (type < 0) {
                 continue;
             }
-            numberOfMissingAmphipods[type]++;
 
             sum += Math.abs(hallwayIndex - burrow.getRoomX(type)) * burrow.getEnergyCost(type);
-        }
-
-        for (int roomIndex = 0; roomIndex < numberOfMissingAmphipods.length; roomIndex++) {
-            sum += (long) numberOfMissingAmphipods[roomIndex] * (numberOfMissingAmphipods[roomIndex] + 1) / 2 *
-                    burrow.getEnergyCost(roomIndex);
         }
 
         return sum;
@@ -112,28 +113,21 @@ public class Day23 {
 
     private static Optional<Move> getRoomToRoomMoves(Burrow burrow) {
         for (int roomIndex = 0; roomIndex < burrow.getNumberOfRooms(); roomIndex++) {
-            if (burrow.getRoomFreeSpots(roomIndex) == burrow.getRoomSize()) {
+            RoomPosition roomPosition = burrow.getRoomHead(roomIndex);
+            if (roomPosition == null || roomPosition.value() == roomIndex) {
                 continue;
             }
-            int amphipod = burrow.getRoomHead(roomIndex);
-            if (amphipod == roomIndex) {
-                continue;
-            }
-            if (!burrow.roomReady(amphipod) ||
-                    burrow.amphipodsBetween(
-                            burrow.getRoomX(roomIndex),
-                            burrow.getRoomX(amphipod)
-                    ).findAny().isPresent()) {
+            TargetRoomPosition target = burrow.getTargetPosition(roomPosition.value());
+            if (target == null || burrow.amphipodsBetween(roomPosition.x(), target.x()).findAny().isPresent()) {
                 continue;
             }
 
-            int distance = burrow.getRoomFreeSpots(roomIndex) + 1 + burrow.getRoomFreeSpots(amphipod) +
-                    Math.abs(burrow.getRoomX(roomIndex) - burrow.getRoomX(amphipod));
-            long cost = distance * burrow.getEnergyCost(amphipod);
+            int distance = roomPosition.depth() + target.depth() + 2 + Math.abs(roomPosition.x() - target.x());
+            long cost = distance * target.energyCost();
 
             Burrow newBurrow = burrow.builder()
-                    .popRoom(roomIndex)
-                    .pushToCorrectRoom(amphipod)
+                    .deleteValueAt(roomPosition.valueIndex())
+                    .setValueAt(target.valueIndex(), roomPosition.value())
                     .build();
 
             return Optional.of(new Move(newBurrow, cost));
@@ -145,17 +139,20 @@ public class Day23 {
     private static Optional<Move> getHallwayToRoomMoves(Burrow burrow) {
         for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
             int amphipod = burrow.getHallwayValue(hallwayIndex);
-            if (amphipod < 0 || !burrow.roomReady(amphipod) ||
-                    burrow.amphipodsBetween(hallwayIndex, burrow.getRoomX(amphipod)).count() != 1L) {
+            if (amphipod < 0) {
+                continue;
+            }
+            TargetRoomPosition target = burrow.getTargetPosition(amphipod);
+            if (target == null || burrow.amphipodsBetween(hallwayIndex, target.x()).count() != 1L) {
                 continue;
             }
 
-            int distance = burrow.getRoomFreeSpots(amphipod) + Math.abs(burrow.getRoomX(amphipod) - hallwayIndex);
-            long cost = distance * burrow.getEnergyCost(amphipod);
+            int distance = target.depth() + 1 + Math.abs(target.x() - hallwayIndex);
+            long cost = distance * target.energyCost();
 
             Burrow newBurrow = burrow.builder()
-                    .setHallway(hallwayIndex, -1)
-                    .pushToCorrectRoom(amphipod)
+                    .setValueAt(hallwayIndex, -1)
+                    .setValueAt(target.valueIndex(), amphipod)
                     .build();
 
             return Optional.of(new Move(newBurrow, cost));
@@ -168,21 +165,20 @@ public class Day23 {
         List<Move> ret = new ArrayList<>();
 
         for (int roomIndex = 0; roomIndex < burrow.getNumberOfRooms(); roomIndex++) {
-            if (burrow.getRoomFreeSpots(roomIndex) == burrow.getRoomSize() || burrow.roomReady(roomIndex)) {
+            RoomPosition roomPosition = burrow.getRoomHead(roomIndex);
+            if (roomPosition == null) {
                 continue;
             }
-            int amphipod = burrow.getRoomHead(roomIndex);
             for (int hallwayIndex : burrow.getLegalHallwayPositions()) {
-                if (burrow.amphipodsBetween(burrow.getRoomX(roomIndex), hallwayIndex).findAny().isPresent()) {
+                if (burrow.amphipodsBetween(roomPosition.x(), hallwayIndex).findAny().isPresent()) {
                     continue;
                 }
-                int distance = burrow.getRoomFreeSpots(roomIndex) + 1 +
-                        Math.abs(burrow.getRoomX(roomIndex) - hallwayIndex);
-                long cost = distance * burrow.getEnergyCost(amphipod);
+                int distance = roomPosition.depth() + 1 + Math.abs(roomPosition.x() - hallwayIndex);
+                long cost = distance * burrow.getEnergyCost(roomPosition.value());
 
                 Burrow newBurrow = burrow.builder()
-                        .setHallway(hallwayIndex, amphipod)
-                        .popRoom(roomIndex)
+                        .setValueAt(hallwayIndex, roomPosition.value())
+                        .deleteValueAt(roomPosition.valueIndex())
                         .build();
 
                 ret.add(new Move(newBurrow, cost));
